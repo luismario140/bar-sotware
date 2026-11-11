@@ -1,0 +1,21 @@
+{
+  "name": "appbarpos-desktop",
+  "productName": "AppBarPOS",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aplicación local de escritorio AppBarPOS",
+  "author": "AppBarPOS",
+  "main": "src/main.cjs",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "start": "node scripts/start.cjs",
+    "check": "node --check src/main.cjs && node --check src/preload.cjs && node --check src/backend.cjs && node --check src/auth-ipc.cjs && node --check src/catalog-ipc.cjs && node --check src/catalog-smoke.cjs && node --check src/smoke.cjs && node --check scripts/start.cjs && node --check scripts/smoke.cjs && node --check scripts/verify-resources.cjs",
+    "smoke": "node scripts/smoke.cjs",
+    "pack:win": "electron-builder --config ../installer/electron-builder.yml --win --x64 --dir",
+    "dist:win": "electron-builder --config ../installer/electron-builder.yml --win --x64"
+  },
+  "devDependencies": {
+    "electron": "45.3.0",
+    "electron-builder": "26.18.0"
+  }
+}

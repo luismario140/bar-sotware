@@ -1,0 +1,27 @@
+# Dependencias y compilación
+node_modules/
+dist/
+target/
+release/
+coverage/
+*.tsbuildinfo
+
+# Configuración local y datos del negocio
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.log
+.local/
+installer/runtime/
+
+# Herramientas y sistema
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+

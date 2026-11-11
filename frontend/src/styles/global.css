@@ -1,0 +1,84 @@
+:root { font-family: "Segoe UI", system-ui, sans-serif; color: #e9edf5; background: #10141c; font-synthesis: none; line-height: 1.5; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 360px; }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; }
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar { width: 240px; flex-shrink: 0; background: #141a24; border-right: 1px solid #28303d; padding: 32px 22px; display: flex; flex-direction: column; }
+.brand { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 700; }
+.brand-icon { display: grid; place-items: center; background: #dfae67; color: #161b24; width: 36px; height: 36px; border-radius: 10px; }
+.sidebar-label, .eyebrow { font-size: 11px; letter-spacing: 1.6px; color: #9ba7ba; font-weight: 600; }
+.sidebar-label { margin-top: 54px; }
+.nav-active { display: block; margin-top: 10px; padding: 12px; border-radius: 8px; background: #273044; color: #eed1a4; font-size: 14px; }
+.sidebar-footer { margin-top: auto; padding-top: 48px; font-size: 12px; color: #95a1b6; line-height: 1.9; }
+main { width: 100%; max-width: 1400px; padding: 42px 48px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.eyebrow { margin: 0 0 10px; }
+h1 { font-size: 29px; letter-spacing: -.7px; margin: 0; font-weight: 600; }
+.phase-badge { color: #dfbe8e; border: 1px solid #5b4933; border-radius: 20px; padding: 6px 13px; font-size: 12px; white-space: nowrap; }
+.welcome { margin: 36px 0 28px; padding: 32px; border: 1px solid #3b3c3d; border-radius: 14px; background: linear-gradient(110deg, #292923, #1a222f); }
+.welcome .eyebrow { color: #dfbe8e; }
+.welcome h2 { font-size: 26px; font-weight: 600; margin: 12px 0; letter-spacing: -.4px; }
+.welcome p:last-child { color: #b0bac9; max-width: 650px; margin-bottom: 0; }
+.status-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.status-card { padding: 24px; border: 1px solid #2a3342; border-radius: 12px; background: #191f2b; }
+.card-title { color: #9ba7ba; letter-spacing: 1px; font-size: 11px; margin: 0; }
+.status-card h2 { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 21px; margin: 20px 0 10px; }
+.status-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: #d4a564; }
+.status-dot.ready { background: #72d3ab; }
+.status-card p:last-child { font-size: 13px; color: #9ba7ba; margin-bottom: 0; }
+.technical-panel { margin-top: 28px; padding: 26px; border-radius: 12px; border: 1px solid #2a3342; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
+.technical-panel h2 { font-size: 17px; margin: 0 0 8px; font-weight: 600; }
+.technical-panel p { color: #9ba7ba; font-size: 13px; margin: 0; }
+button { color: #171c26; background: #dfae67; border: none; padding: 11px 17px; border-radius: 7px; font-weight: 600; cursor: pointer; }
+button:hover { background: #edc38a; }
+button:disabled { opacity: .6; cursor: wait; }
+a:focus-visible, button:focus-visible { outline: 2px solid #f2d5ab; outline-offset: 4px; }
+.technical-panel .message { flex-basis: 100%; color: #81c9aa; }
+.technical-panel .error { color: #f2a4a4; }
+.scope-note { color: #95a1b6; font-size: 12px; margin-top: 26px; }
+@media (max-width: 1050px) { main { padding: 30px 26px; } .sidebar { width: 210px; } .status-grid { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .app-shell { flex-direction: column; } .sidebar { width: 100%; padding: 18px; } .sidebar-label, .sidebar-footer, nav { display: none; } main { padding: 26px 18px; } .welcome { padding: 22px; } .welcome h2 { font-size: 23px; } }
+
+.access-layout { min-height: 100vh; max-width: 1180px; margin: auto; padding: 64px 40px; display: grid; grid-template-columns: 1fr 440px; align-items: center; gap: 64px; }
+.access-story { min-height: 560px; display: flex; flex-direction: column; align-items: flex-start; padding: 32px 0; }
+.access-intro { margin: auto 0; padding: 60px 0; }
+.access-intro .eyebrow { color: #dfae67; }
+.access-intro h1 { font-size: clamp(30px, 3.5vw, 47px); line-height: 1.18; letter-spacing: -1.5px; }
+.access-intro p:last-child { color: #a8b3c6; max-width: 330px; margin-top: 24px; }
+.local-badge { display: flex; align-items: center; gap: 10px; color: #a8b3c6; font-size: 13px; }
+.access-card { padding: 36px; background: #191f2b; border: 1px solid #30394a; border-radius: 16px; box-shadow: 0 18px 60px #0003; }
+.access-card h2 { margin: 10px 0; font-size: 27px; font-weight: 600; letter-spacing: -.6px; }
+.form-description { color: #a8b3c6; font-size: 14px; margin: 10px 0 26px; }
+.access-form { display: flex; flex-direction: column; gap: 10px; }
+.access-form label { font-size: 13px; color: #c5cede; margin-top: 8px; }
+.access-form input { width: 100%; background: #101620; color: #edf1f7; border: 1px solid #3a465b; border-radius: 7px; padding: 12px 13px; }
+.access-form input:focus { border-color: #dfae67; outline: 2px solid #dfae6733; outline-offset: 1px; }
+.access-form input:disabled { opacity: .65; }
+.access-form .field-help { font-size: 11px; color: #9ba7ba; margin: 0; }
+.text-button { background: transparent; color: #dfbe8e; padding: 4px 0; font-size: 12px; font-weight: 400; }
+.text-button:hover { background: transparent; color: #f2d5ab; }
+.pin-toggle { align-self: flex-end; }
+.primary-button { width: 100%; margin-top: 10px; padding: 13px; }
+.form-error { background: #642d2d33; border: 1px solid #784343; border-radius: 7px; padding: 12px; color: #f2b0b0; font-size: 13px; }
+.form-success { padding: 12px; border-radius: 7px; background: #245a4033; border: 1px solid #38634f; color: #a1ddc1; font-size: 13px; }
+.access-footer { color: #9ba7ba; font-size: 11px; text-align: center; margin-top: 24px; }
+.secondary-button { background: transparent; border: 1px solid #43516a; color: #c5cede; }
+.secondary-button:hover { background: #273044; }
+.connection-page { margin: 10vh auto; max-width: 700px; }
+.connection-page h1 { margin-top: 40px; }
+.connection-page p { color: #b0bac9; }
+.nav-button { display: block; width: 100%; text-align: left; color: #a8b3c6; background: transparent; font-size: 13px; font-weight: 400; margin-top: 10px; padding: 12px; border-radius: 8px; }
+.nav-button:hover { background: #202839; }
+.nav-button.nav-active { color: #eed1a4; background: #273044; }
+.security-panel { margin-top: 32px; padding: 28px; border: 1px solid #2a3342; border-radius: 12px; background: #191f2b; }
+.security-panel h2 { font-size: 20px; font-weight: 600; margin: 0; }
+.credentials-form { max-width: 480px; }
+.credentials-form fieldset { padding: 0; margin: 0; border: 0; display: flex; flex-direction: column; gap: 10px; }
+.credentials-form > button { align-self: flex-start; margin-top: 14px; }
+.confirm-panel { border: 1px solid #67553c; border-radius: 8px; padding: 16px; background: #79603a16; font-size: 13px; color: #e5cfac; margin-top: 12px; }
+.confirm-panel p { margin-top: 0; overflow-wrap: anywhere; }
+.button-row { display: flex; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 900px) { .access-layout { gap: 28px; grid-template-columns: 1fr 380px; padding: 30px 24px; } .access-card { padding: 26px; } }
+@media (max-width: 650px) { .access-layout { display: block; padding: 24px 18px; } .access-story { min-height: auto; padding: 0; } .access-intro { padding: 28px 0 14px; } .access-intro h1 { font-size: 29px; } .access-intro p:last-child { margin-top: 14px; } .local-badge { margin-bottom: 26px; } .app-shell nav { display: flex; gap: 8px; } .nav-button { font-size: 12px; } .page-header { flex-wrap: wrap; } .security-panel { padding: 20px; } }
+@media (min-width: 651px) and (max-height: 800px) { .access-layout { padding-top: 28px; padding-bottom: 28px; } .access-story { min-height: 500px; } .access-card { padding: 28px; } .access-form { gap: 8px; } .access-form label { margin-top: 4px; } .access-form input { padding: 10px 13px; } }

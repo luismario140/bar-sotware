@@ -1,0 +1,30 @@
+appId: com.appbarpos.desktop
+productName: AppBarPOS
+asar: true
+directories:
+  output: ../installer/release
+files:
+  - src/**/*.cjs
+  - package.json
+  - from: ../frontend/dist
+    to: renderer
+    filter:
+      - '**/*'
+extraResources:
+  - from: ../backend/target/appbarpos-backend-runtime.jar
+    to: backend/appbarpos-backend.jar
+  - from: ../installer/runtime
+    to: runtime
+beforePack: ./scripts/verify-resources.cjs
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  runAfterFinish: false
+publish: null
