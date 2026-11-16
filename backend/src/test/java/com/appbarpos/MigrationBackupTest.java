@@ -21,6 +21,28 @@ class MigrationBackupTest {
     @TempDir Path root;
 
     @Test
+    void upgradingCatalogPreservesProductsAndInitializesInventory() throws Exception {
+        var paths = new AppDataPaths(root.toString());
+        var configuration = new DatabaseConfiguration();
+        try (var source = configuration.dataSource(paths)) {
+            Flyway.configure().dataSource(source).locations("classpath:db/migration").target("3").load().migrate();
+            var jdbc = new JdbcTemplate(source);
+            String id = java.util.UUID.randomUUID().toString();
+            jdbc.update("INSERT INTO product (id, name, category, active, version, created_at, updated_at) VALUES (?, 'Existente', 'Cervezas', 0, 2, 0, 0)", id);
+            jdbc.update("INSERT INTO sale_presentation (id, product_id, kind, price_minor, currency, active) VALUES (?, ?, 'UNIT', 650000, 'COP', 1)", java.util.UUID.randomUUID().toString(), id);
+            configuration.flyway(source, paths).migrate();
+            var product = new com.appbarpos.catalog.repository.ProductRepository(jdbc).find(id).orElseThrow();
+            assertThat(product.name()).isEqualTo("Existente");
+            assertThat(product.active()).isFalse();
+            assertThat(product.version()).isEqualTo(2);
+            assertThat(product.unitPriceMinor()).isEqualTo(650000);
+            assertThat(product.quantitySold()).isZero();
+            assertThat(product.quantityRemaining()).isZero();
+            try (var backups = Files.list(root.resolve("backups"))) { assertThat(backups.count()).isEqualTo(1); }
+        }
+    }
+
+    @Test
     void upgradingFromAdministrativeAccessPreservesCredentialsAndMedia() throws Exception {
         var paths = new AppDataPaths(root.toString());
         var configuration = new DatabaseConfiguration();

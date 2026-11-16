@@ -59,9 +59,34 @@ class CatalogApiIntegrationTest {
             assertThat(image.headers().firstValue("Content-Type")).contains("image/png");
             assertThat(image.headers().firstValue("X-Content-Type-Options")).contains("nosniff");
             assertThat(javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(image.body())).getWidth()).isEqualTo(8);
+            String restock = json.writeValueAsString(new ProductCommands.Restock(UUID.randomUUID().toString(), 1, new java.math.BigDecimal("4")));
+            var stocked = send(client, "POST", "/api/products/" + product.id() + "/restock", restock);
+            assertThat(stocked.statusCode()).isEqualTo(200);
+            assertThat(json.readValue(stocked.body(), Product.class).quantityRemaining()).isEqualTo(4);
+            String checkout = json.writeValueAsString(new ProductCommands.Checkout(UUID.randomUUID().toString(), java.util.List.of(
+                    new ProductCommands.SaleLine(product.id(), 2, new java.math.BigDecimal("2")))));
+            var sale = send(client, "POST", "/api/products/sales", checkout);
+            assertThat(sale.statusCode()).isEqualTo(200);
+            var receipt = json.readValue(sale.body(), com.appbarpos.catalog.domain.SaleReceipt.class);
+            assertThat(receipt.totalMinor()).isEqualTo(1000100);
+            assertThat(receipt.lines().getFirst().product().quantityRemaining()).isEqualTo(2);
+            assertThat(receipt.lines().getFirst().product().quantitySold()).isEqualTo(2);
+            assertThat(send(client, "POST", "/api/products/sales", checkout).body()).isEqualTo(sale.body());
             assertThat(send(client, "POST", "/api/products/" + product.id() + "/status",
-                    json.writeValueAsString(new ProductCommands.Status(UUID.randomUUID().toString(), 1, false))).statusCode()).isEqualTo(200);
+                    json.writeValueAsString(new ProductCommands.Status(UUID.randomUUID().toString(), 3, false))).statusCode()).isEqualTo(200);
+            String deletion = json.writeValueAsString(new ProductCommands.Delete(UUID.randomUUID().toString(), 4));
+            assertThat(send(client, "DELETE", "/api/products/" + product.id(), deletion).statusCode()).isEqualTo(200);
+            assertThat(send(client, "DELETE", "/api/products/" + product.id(), deletion).statusCode()).isEqualTo(200);
+            assertThat(send(client, "GET", "/api/products", null).body()).isEqualTo("[]");
+            var savedSales = send(client, "GET", "/api/products/sales?page=0", null);
+            assertThat(savedSales.statusCode()).isEqualTo(200);
+            assertThat(json.readValue(savedSales.body(), com.appbarpos.catalog.domain.SalesHistory.class).sales()).containsExactly(receipt);
+            assertThat(send(client, "GET", "/api/products/sales?page=-1", null).statusCode()).isEqualTo(400);
             send(client, "POST", "/api/auth/logout", null);
+            assertThat(send(client, "GET", "/api/products/sales", null).statusCode()).isEqualTo(401);
+            assertThat(send(client, "POST", "/api/products/sales", checkout).statusCode()).isEqualTo(401);
+            assertThat(send(client, "POST", "/api/products/" + product.id() + "/restock", restock).statusCode()).isEqualTo(401);
+            assertThat(send(client, "DELETE", "/api/products/" + product.id(), deletion).statusCode()).isEqualTo(401);
             assertThat(send(client, "GET", "/api/products/" + product.id() + "/image", null).statusCode()).isEqualTo(401);
         }
     }

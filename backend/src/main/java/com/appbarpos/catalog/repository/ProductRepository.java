@@ -21,7 +21,9 @@ public class ProductRepository {
     private Product map(java.sql.ResultSet rs, int row) throws java.sql.SQLException {
         return new Product(rs.getString("id"), rs.getString("name"), rs.getString("category"), rs.getBoolean("active"),
                 rs.getInt("version"), nullableLong(rs, "unit_price"),
-                nullableLong(rs, "shot_price"), rs.getString("image_id"));
+                nullableLong(rs, "shot_price"), rs.getString("image_id"),
+                rs.getLong("quantity_sold"), rs.getLong("quantity_remaining"), rs.getString("package_kind"),
+                rs.getObject("volume_ml") == null ? null : rs.getInt("volume_ml"));
     }
 
     private Long nullableLong(java.sql.ResultSet rs, String column) throws java.sql.SQLException {
@@ -29,16 +31,24 @@ public class ProductRepository {
         return rs.wasNull() ? null : value;
     }
 
-    public List<Product> list() { return jdbc.query(SELECT + " ORDER BY p.name COLLATE NOCASE, p.id", this::map); }
-    public Optional<Product> find(String id) { return jdbc.query(SELECT + " WHERE p.id = ?", this::map, id).stream().findFirst(); }
+    private static final String VISIBLE = " NOT EXISTS (SELECT 1 FROM product_deletion d WHERE d.product_id = p.id)";
+    public List<Product> list() { return jdbc.query(SELECT + " WHERE" + VISIBLE + " ORDER BY p.name COLLATE NOCASE, p.id", this::map); }
+    public Optional<Product> find(String id) { return jdbc.query(SELECT + " WHERE p.id = ? AND" + VISIBLE, this::map, id).stream().findFirst(); }
+
+    public void delete(String operation, String product, long administrator, String hash, String result, long now) {
+        jdbc.update("INSERT INTO product_deletion (operation_id, product_id, administrator_id, request_hash, result_json, occurred_at) VALUES (?, ?, ?, ?, ?, ?)",
+                operation, product, administrator, hash, result, now);
+    }
 
     public void save(Product product, boolean create, long now) {
         if (create) {
-            jdbc.update("INSERT INTO product (id, name, category, active, image_id, version, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    product.id(), product.name(), product.category(), product.active(), product.imageId(), product.version(), now, now);
+            jdbc.update("INSERT INTO product (id, name, category, active, image_id, version, created_at, updated_at, quantity_sold, quantity_remaining, package_kind, volume_ml) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    product.id(), product.name(), product.category(), product.active(), product.imageId(), product.version(), now, now,
+                    product.quantitySold(), product.quantityRemaining(), product.packageKind(), product.volumeMl());
         } else {
-            int changed = jdbc.update("UPDATE product SET name = ?, category = ?, active = ?, image_id = ?, version = ?, updated_at = ? WHERE id = ? AND version = ?",
-                    product.name(), product.category(), product.active(), product.imageId(), product.version(), now, product.id(), product.version() - 1);
+            int changed = jdbc.update("UPDATE product SET name = ?, category = ?, active = ?, image_id = ?, version = ?, updated_at = ?, quantity_sold = ?, quantity_remaining = ?, package_kind = ?, volume_ml = ? WHERE id = ? AND version = ?",
+                    product.name(), product.category(), product.active(), product.imageId(), product.version(), now,
+                    product.quantitySold(), product.quantityRemaining(), product.packageKind(), product.volumeMl(), product.id(), product.version() - 1);
             if (changed != 1) throw new com.appbarpos.catalog.application.CatalogException(org.springframework.http.HttpStatus.CONFLICT,
                     "VERSION_CONFLICT", "El producto cambió. Actualiza el catálogo antes de editarlo.");
         }
@@ -57,8 +67,25 @@ public class ProductRepository {
     }
 
     public Optional<Operation> operation(String id) {
-        return jdbc.query("SELECT request_hash, result_json FROM product_operation WHERE id = ?",
-                (rs, row) -> new Operation(rs.getString(1), rs.getString(2)), id).stream().findFirst();
+        return jdbc.query("SELECT request_hash, result_json FROM product_operation WHERE id = ? UNION ALL SELECT request_hash, result_json FROM product_deletion WHERE operation_id = ? " +
+                        "UNION ALL SELECT request_hash, result_json FROM inventory_movement WHERE operation_id = ? AND kind = 'RESTOCK' " +
+                        "UNION ALL SELECT request_hash, result_json FROM inventory_sale WHERE operation_id = ?",
+                (rs, row) -> new Operation(rs.getString(1), rs.getString(2)), id, id, id, id).stream().findFirst();
+    }
+
+    public void sale(String operation, long administrator, String hash, long total, String result, long now) {
+        jdbc.update("INSERT INTO inventory_sale VALUES (?, ?, ?, ?, ?, ?)", operation, administrator, hash, total, result, now);
+    }
+
+    public List<String> sales(int page) {
+        return jdbc.query("SELECT result_json FROM inventory_sale ORDER BY occurred_at DESC, operation_id DESC LIMIT 21 OFFSET ?",
+                (rs, row) -> rs.getString(1), page * 20);
+    }
+
+    public void movement(String operation, String product, String sale, long administrator, String kind, long quantity,
+                         String hash, String before, String after, long now) {
+        jdbc.update("INSERT INTO inventory_movement VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                UUID.randomUUID().toString(), operation, product, sale, administrator, kind, quantity, hash, before, after, now);
     }
 
     public boolean imageReferenced(String id) {
