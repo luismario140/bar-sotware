@@ -3,12 +3,21 @@ import { AuthError, unwrapReply, type ApiReply } from './auth'
 export interface Product {
   id: string; name: string; category: string; active: boolean; version: number
   unitPriceMinor: number | null; shotPriceMinor: number | null; imageId: string | null
+  quantitySold: number; quantityRemaining: number
+  packageKind: string | null; volumeMl: number | null
 }
-export type CatalogOperation = 'list' | 'create' | 'update' | 'status' | 'image'
+export interface SaleReceipt {
+  id: string; totalMinor: number; occurredAt: number
+  lines: { product: Product; quantity: number; unitPriceMinor: number; subtotalMinor: number }[]
+}
+export interface SalesHistory { sales: SaleReceipt[]; page: number; hasNext: boolean }
+export type CatalogOperation = 'list' | 'create' | 'update' | 'status' | 'image' | 'delete' | 'restock' | 'checkout' | 'sales'
 export interface ProductInput {
   operationId: string; expectedVersion: number | null; name: string; category: string
   active: boolean; unitPrice: string | null; shotPrice: string | null
   imageBase64: string | null; removeImage: boolean
+  quantitySold: number; quantityRemaining: number
+  packageKind: string | null; volumeMl: number | null
 }
 
 export async function catalogRequest<T>(operation: CatalogOperation, payload?: Record<string, unknown>): Promise<T> {
@@ -17,9 +26,9 @@ export async function catalogRequest<T>(operation: CatalogOperation, payload?: R
     if (window.appbarpos) reply = await window.appbarpos.catalog(operation, payload)
     else {
       const { id, ...body } = payload || {}
-      const relative = operation === 'list' || operation === 'create' ? '/api/products'
-        : `/api/products/${encodeURIComponent(String(id))}${operation === 'status' ? '/status' : operation === 'image' ? '/image' : ''}`
-      const method = operation === 'list' || operation === 'image' ? 'GET' : operation === 'update' ? 'PUT' : 'POST'
+      const relative = operation === 'sales' ? `/api/products/sales?page=${encodeURIComponent(String(body.page ?? 0))}` : operation === 'checkout' ? '/api/products/sales' : operation === 'list' || operation === 'create' ? '/api/products'
+        : `/api/products/${encodeURIComponent(String(id))}${operation === 'status' ? '/status' : operation === 'image' ? '/image' : operation === 'restock' ? '/restock' : ''}`
+      const method = operation === 'list' || operation === 'image' || operation === 'sales' ? 'GET' : operation === 'delete' ? 'DELETE' : operation === 'update' ? 'PUT' : 'POST'
       const response = await fetch(relative, {
         method, credentials: 'same-origin', cache: 'no-store',
         headers: method !== 'GET' ? { 'Content-Type': 'application/json' } : {},

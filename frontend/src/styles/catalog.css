@@ -1,28 +1,41 @@
 .catalog-page { margin-top: 28px; }
+.app-shell main { min-width: 0; }
 .catalog-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 .catalog-heading .form-description { margin: 0 0 6px; }
 .catalog-count { color: #9ba7ba; font-size: 12px; margin: 0; }
-.catalog-filters { display: grid; grid-template-columns: minmax(160px, 1fr) 150px 190px; gap: 16px; margin: 26px 0; padding: 20px; background: #191f2b; border: 1px solid #2a3342; border-radius: 12px; }
+.catalog-filters { display: grid; grid-template-columns: minmax(160px, 1fr) 220px; gap: 16px; margin: 26px 0; padding: 20px; background: #191f2b; border: 1px solid #2a3342; border-radius: 12px; }
 .catalog-filters label { font-size: 12px; color: #a8b3c6; display: flex; flex-direction: column; gap: 8px; }
 .catalog-filters input, .catalog-filters select { width: 100%; background: #101620; color: #edf1f7; border: 1px solid #3a465b; border-radius: 7px; padding: 10px; font: inherit; }
 .catalog-filters input:focus-visible, .catalog-filters select:focus-visible { outline: 2px solid #dfae67; outline-offset: 2px; }
-.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)); gap: 20px; }
-.product-card { background: #191f2b; border: 1px solid #2a3342; border-radius: 12px; overflow: hidden; }
-.product-picture { height: 170px; position: relative; background: #202838; }
-.product-image { width: 100%; height: 100%; object-fit: contain; display: block; }
-.product-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: #8896ad; background: linear-gradient(125deg, #253044, #1c2534); }
-.product-placeholder span { font-size: 34px; font-weight: 600; opacity: .75; }
-.product-placeholder small { font-size: 11px; }
-.product-status { position: absolute; top: 12px; right: 12px; background: #2b303ce8; color: #c4c8d0; border-radius: 20px; padding: 4px 10px; font-size: 11px; }
-.product-status.is-active { background: #153b2eea; color: #9cdbbb; }
-.product-inactive .product-picture { filter: saturate(.4); }
-.product-details { padding: 20px; }
-.product-details .card-title { overflow-wrap: anywhere; }
-.product-details h2 { font-size: 18px; margin: 8px 0 18px; font-weight: 600; overflow-wrap: anywhere; }
-.product-prices p { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: #9ba7ba; margin: 7px 0; }
-.product-prices strong { color: #e4c499; font-weight: 600; }
-.product-actions { margin-top: 20px; padding-top: 16px; border-top: 1px solid #2a3342; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-.product-actions .secondary-button { font-size: 12px; padding: 7px 16px; }
+.inventory-groups { border: 1px solid #3a465b; border-radius: 8px; overflow: hidden; }
+.inventory-group + .inventory-group { border-top: 1px solid #3a465b; }
+.inventory-group summary { padding: 14px 16px; background: #202b38; color: #edf1f7; cursor: pointer; font-size: 14px; font-weight: 600; }
+.inventory-group summary::marker { color: #dfae67; }
+.inventory-group summary > span:first-child { margin-left: 8px; overflow-wrap: anywhere; }
+.category-count { margin-left: 14px; color: #a8b3c6; font-size: 12px; font-weight: 400; white-space: nowrap; }
+.inventory-scroll { overflow-x: auto; }
+.inventory-table { width: 100%; min-width: 780px; border-collapse: collapse; font-size: 13px; background: #151c27; }
+.inventory-table th, .inventory-table td { border-right: 1px solid #303b4b; border-bottom: 1px solid #303b4b; padding: 12px 14px; text-align: left; }
+.inventory-table th:last-child, .inventory-table td:last-child { border-right: 0; }
+.inventory-table tbody tr:last-child td { border-bottom: 0; }
+.inventory-table th { background: #192330; color: #aebbcf; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.inventory-table tbody tr:nth-child(even) { background: #19212d; }
+.inventory-table tbody tr:hover { background: #253344; }
+.inventory-table .numeric-cell { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.inventory-id { color: #99a8bf; font-family: monospace; font-size: 12px; }
+.inventory-price { color: #e4c499; }
+.inventory-price small { color: #a8b3c6; font-size: 11px; }
+.inventory-price div + div { margin-top: 5px; }
+.inventory-table td.stock-empty { color: #e9ae78; }
+.product-name-button { padding: 0; border: 0; border-radius: 2px; background: transparent; color: #edf1f7; font: inherit; font-weight: 600; text-align: left; overflow-wrap: anywhere; }
+.product-name-button:hover { color: #dfae67; background: transparent; text-decoration: underline; }
+.inventory-name-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.delete-product-button { background: transparent; color: #f2b0b0; padding: 4px; font-size: 11px; font-weight: 400; }
+.delete-product-button:hover { background: #642d2d33; color: #ffd3d3; }
+.danger-button { background: #a83b3b; color: #fff; }
+.danger-button:hover { background: #bd4848; }
+.inventory-table td:nth-child(2), .inventory-table td:nth-child(3) { min-width: 140px; max-width: 280px; overflow-wrap: anywhere; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .catalog-empty { margin-top: 20px; text-align: center; padding: 60px 20px; border: 1px dashed #39445a; border-radius: 12px; color: #9ba7ba; }
 .catalog-empty h2 { color: #d3dbea; font-size: 22px; font-weight: 600; }
 .catalog-empty p { font-size: 14px; margin-bottom: 26px; }
@@ -35,12 +48,19 @@
 .product-form fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .price-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
 .price-fields label { display: block; margin: 0 0 8px; }
-.checkbox-label { display: flex; align-items: center; gap: 10px; }
-.access-form .checkbox-label input { width: 16px; height: 16px; accent-color: #dfae67; }
-.image-editor { display: flex; align-items: center; gap: 20px; }
-.image-preview { width: 110px; height: 110px; flex-shrink: 0; border: 1px dashed #4a576e; border-radius: 9px; display: grid; place-items: center; overflow: hidden; color: #9ba7ba; font-size: 12px; }
-.image-preview img { width: 100%; height: 100%; object-fit: contain; }
-.image-editor input[type=file] { padding: 6px 0; border: 0; background: none; font-size: 12px; }
-.image-editor .field-help { margin: 10px 0; }
-@media (max-width: 1000px) { .catalog-filters { grid-template-columns: 1fr 1fr; } .catalog-filters label:first-child { grid-column: 1 / -1; } }
-@media (max-width: 650px) { .app-shell nav { flex-wrap: wrap; } .nav-button { width: auto; flex: 1 1 auto; } .price-fields { grid-template-columns: 1fr; } .app-dialog { padding: 20px; } .image-editor { gap: 12px; align-items: flex-start; } .catalog-filters { padding: 14px; gap: 10px; } }
+.access-form select { width: 100%; background: #101620; color: #edf1f7; border: 1px solid #3a465b; border-radius: 7px; padding: 12px 13px; font: inherit; }
+.access-form select:focus-visible { outline: 2px solid #dfae67; outline-offset: 2px; }
+.category-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 16px; background: #151c27; }
+.category-toolbar .secondary-button { font-size: 12px; padding: 7px 12px; }
+.field-help { color: #9ba7ba; font-size: 12px; }
+.product-package { display: block; margin-top: 4px; color: #a8b3c6; font-size: 11px; }
+.restock-button { display: block; margin: 4px 0 0 auto; padding: 2px 0; background: transparent; color: #dfbe8e; font-size: 11px; font-weight: 400; }
+.restock-button:hover { background: transparent; color: #f2d5ab; text-decoration: underline; }
+.stock-preview { color: #a1ddc1; font-size: 13px; }
+@media (max-width: 650px) {
+  .app-shell nav { flex-wrap: wrap; }
+  .nav-button { width: auto; flex: 1 1 auto; }
+  .price-fields { grid-template-columns: 1fr; }
+  .app-dialog { padding: 20px; }
+  .catalog-filters { grid-template-columns: 1fr; padding: 14px; gap: 10px; }
+}
