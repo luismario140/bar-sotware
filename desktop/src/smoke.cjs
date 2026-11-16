@@ -27,8 +27,9 @@ async function runSmoke(window, backend, dataDirectory) {
   async function fill(id, value) {
     await evaluate(`(() => {
       const input = document.getElementById(${JSON.stringify(id)});
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, ${JSON.stringify(value)});
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const prototype = input instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+      Object.getOwnPropertyDescriptor(prototype, 'value').set.call(input, ${JSON.stringify(value)});
+      input.dispatchEvent(new Event(input instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true }));
     })()`)
   }
   async function submit() { await evaluate("document.querySelector('form').requestSubmit()") }

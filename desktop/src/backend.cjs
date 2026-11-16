@@ -107,12 +107,20 @@ async function startBackend({ packaged, resourcesPath, dataDirectory }) {
     async catalog(operation, payload) {
       if (operation === 'list') return request('/api/products', 'GET')
       if (operation === 'create') return request('/api/products', 'POST', payload)
-      if (!['update', 'status', 'image'].includes(operation) || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(payload?.id || '')) {
+      if (operation === 'checkout') return request('/api/products/sales', 'POST', payload)
+      if (operation === 'sales') {
+        const page = payload?.page ?? 0
+        if (!Number.isInteger(page) || page < 0 || page > 1000000) throw new Error('La página de ventas no es válida.')
+        return request('/api/products/sales?page=' + page, 'GET')
+      }
+      if (!['update', 'status', 'image', 'delete', 'restock'].includes(operation) || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(payload?.id || '')) {
         throw new Error('Operación de catálogo no permitida.')
       }
       const { id, ...body } = payload
       const relative = `/api/products/${id}`
       if (operation === 'image') return request(relative + '/image', 'GET', undefined, true)
+      if (operation === 'delete') return request(relative, 'DELETE', body)
+      if (operation === 'restock') return request(relative + '/restock', 'POST', body)
       return request(relative + (operation === 'status' ? '/status' : ''), operation === 'status' ? 'POST' : 'PUT', body)
     },
     async stop() {
