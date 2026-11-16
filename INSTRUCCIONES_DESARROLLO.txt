@@ -1,0 +1,128 @@
+APPBARPOS - EJECUCIÓN DURANTE EL DESARROLLO
+========================================
+
+Ejecuta los comandos en PowerShell.
+Ruta del proyecto: E:\Programacion\bar-software
+
+REQUISITOS
+----------
+- Java JDK 21 o superior compatible con Spring Boot.
+- Node.js 22.12 o superior y npm.
+- Internet para descargar dependencias la primera vez.
+- No necesitas instalar Maven, SQLite ni Docker por separado.
+
+OPCIÓN 1: APLICACIÓN DE ESCRITORIO
+---------------------------------
+Primera ejecución o después de actualizar las dependencias:
+
+cd E:\Programacion\bar-software\backend
+.\mvnw.cmd verify
+
+cd ..\frontend
+npm ci
+npm run build
+
+cd ..\desktop
+npm ci
+npm start
+
+Si un comando falla, corrige el error antes de continuar.
+
+Si ya compilaste y no has cambiado el código, basta con:
+
+cd E:\Programacion\bar-software\desktop
+npm start
+
+Electron abre la ventana e inicia el backend automáticamente.
+No necesitas ejecutar Vite ni iniciar otro backend manualmente.
+Deja abierta la terminal mientras utilizas la aplicación.
+El inicio de Java puede tardar varios segundos.
+
+DESPUÉS DE CAMBIAR EL CÓDIGO PARA ESCRITORIO
+-------------------------------------------
+1. Cierra la ventana de la aplicación.
+2. Si cambiaste el backend:
+
+   cd E:\Programacion\bar-software\backend
+   .\mvnw.cmd verify
+
+3. Si cambiaste el frontend:
+
+   cd E:\Programacion\bar-software\frontend
+   npm run build
+
+4. Vuelve a abrir la aplicación:
+
+   cd E:\Programacion\bar-software\desktop
+   npm start
+
+Si cambiaste dependencias de frontend o desktop, ejecuta npm ci
+en la carpeta correspondiente antes de compilar o iniciar.
+Si solo cambiaste código de desktop, cierra y vuelve a iniciar.
+Abrir una segunda instancia recupera la ventana existente; para cargar
+los cambios debes cerrar primero la anterior.
+
+OPCIÓN 2: DESARROLLO EN EL NAVEGADOR
+-----------------------------------
+Abre dos terminales de PowerShell.
+
+Terminal 1: iniciar el backend
+
+cd E:\Programacion\bar-software
+.\scripts\start-backend-dev.ps1
+
+Terminal 2: iniciar el frontend
+
+cd E:\Programacion\bar-software\frontend
+npm ci
+npm run dev
+
+Abre en el navegador:
+http://127.0.0.1:5173
+
+En los siguientes arranques puedes omitir npm ci si las dependencias
+ya están instaladas y no han cambiado.
+Vite actualiza el frontend al guardar cambios. Para cambios del backend,
+detén su terminal con Ctrl+C y vuelve a ejecutar el script.
+Para detener el desarrollo web, pulsa Ctrl+C en ambas terminales.
+
+Usa el script start-backend-dev.ps1 para trabajar en el navegador:
+comparte con Vite el token necesario para acceder al backend.
+El comando directo de Maven spring-boot:run no comparte ese token.
+
+COMPROBAR EL BACKEND WEB
+-----------------------
+Con el backend iniciado, ejecuta en otra terminal:
+
+Invoke-RestMethod http://127.0.0.1:8080/api/system/health
+
+Debe mostrar status=UP y database=UP.
+
+Si el puerto 8080 está ocupado, detén los procesos de desarrollo de esta
+aplicación y establece esta variable en AMBAS terminales antes de iniciar:
+
+$env:APPBARPOS_PORT = '8081'
+
+Después inicia backend y frontend con los comandos anteriores.
+El frontend sigue en el puerto 5173; el backend usa 8081.
+Para comprobar su estado, cambia 8080 por 8081 en la URL de diagnóstico.
+
+ACCESO Y DATOS
+--------------
+El primer uso permite crear el administrador y elegir usuario y PIN.
+No hay credenciales precargadas.
+Los datos se conservan al cerrar y volver a ejecutar la aplicación.
+Ubicación habitual en Windows:
+
+%LOCALAPPDATA%\BarSoftware\
+
+Para hacer pruebas sin utilizar los datos habituales, establece antes
+de iniciar la aplicación:
+
+$env:APPBARPOS_DATA_DIR = Join-Path $env:TEMP 'AppBarPOS-desarrollo'
+
+En modo navegador, establece esta variable en la terminal del backend.
+En escritorio, establécela en la terminal donde ejecutas npm start.
+Esa carpeta mantiene sus datos entre ejecuciones mientras exista.
+
+Más información: README.md en la raíz del proyecto.

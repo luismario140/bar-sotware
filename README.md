@@ -1,8 +1,9 @@
 # AppBarPOS
 
 POS de escritorio para Windows 10/11 x64 en desarrollo por etapas. Incluye acceso del
-administrador y catálogo propio con imágenes, categorías, precios por unidad/shot y
-activación/desactivación. Inventario, ventas, jornadas y caja siguen pendientes.
+administrador e inventario en tabla por categorías, precios por unidad/shot y
+ventas por unidades completas con actualización automática de existencias y reposición.
+Jornadas, caja y venta por shots con descuento de volumen siguen pendientes.
 No se emiten facturas.
 Las cuentas serán independientes, sin mesas, con un único administrador y ventas por
 unidad/shot. La operación será offline; la recuperación opcional por correo será la
@@ -14,7 +15,7 @@ unidad/shot. La operación será offline; la recuperación opcional por correo s
 frontend/                 React + TypeScript + Vite
   src/app/                Composición de interfaz
   src/components/         Componentes compartidos
-  src/catalog/            Tarjetas, edición, imágenes y dinero exacto
+  src/catalog/            Edición de inventario y dinero exacto
   src/pages/              Acceso y administración local
   src/services/           Autenticación y diagnóstico
 backend/                  Spring Boot + Maven Wrapper
@@ -162,27 +163,59 @@ después exige iniciar sesión de nuevo y revoca las demás sesiones. Los datos 
 La recuperación por correo todavía no está implementada y no existe un PIN maestro.
 No se guarda el PIN temporal documentado en SQL, configuración o código de producción.
 
-## Productos e imágenes
+## Productos e inventario
 
-Después de entrar se abre «Productos». El catálogo comienza vacío y lo administra el
-propietario: crear, editar, buscar por nombre/categoría y filtrar activos/inactivos.
-Las categorías son texto libre; no se instala un catálogo comercial de muestra.
+Después de entrar se abre «Inventario». Muestra una tabla con ID abreviado, nombre,
+categoría, precio, cantidad vendida y cantidad restante. Los productos se agrupan en
+categorías plegables; se puede buscar por ID/nombre/categoría y filtrar por categoría.
+Seleccionar el nombre abre la edición. Es obligatorio escoger una categoría de la
+lista: Cervezas, Aguardientes, Rones, Tequilas, Whiskies, Cócteles, Bebidas sin alcohol -
+energizantes y Bebidas preparadas mezclas, en ese orden. Las categorías aparecen incluso
+vacías y cada una tiene «Agregar producto» con la categoría preseleccionada.
+Los productos antiguos con categorías diferentes aparecen en «Por clasificar» hasta
+que se editen; no se reclasifican ni se eliminan automáticamente.
+
+En Rones y Aguardientes se exige presentación: Media (375 ml), Botella (750 ml) o Litro
+(1000 ml). El contenido se puede ajustar según la etiqueta. Crear un producto por
+presentación permite mantener existencias separadas de una misma marca.
 
 Configurar precio por unidad, por shot o ambos. Dejar vacío el precio de una presentación
 que no se ofrece; al menos una debe tener precio. Usar valores no negativos, sin puntos
 de miles y con hasta dos decimales (por ejemplo, 6500,50). Java y SQLite guardan centavos
 enteros y la interfaz conserva la precisión al editar, incluso en importes grandes.
 
-Se puede seleccionar PNG/JPEG de hasta 5 MiB desde el computador o USB. La aplicación
-valida su contenido y dimensiones (máximo 4096 por lado y 10 millones de píxeles),
-normaliza a PNG de hasta 1024 por lado y guarda una copia en media/productos. Retirar
-la USB o mover el original no rompe la imagen. Se puede reemplazar o quitar la foto;
-los archivos anteriores se conservan para auditoría y respaldo, sin limpieza automática.
+El formulario permite registrar o corregir cantidades restantes enteras no negativas;
+la cantidad vendida es de solo lectura. «Agregar existencias» suma unidades nuevas
+sobre las disponibles sin modificar lo vendido. Ambos cambios se guardan en SQLite.
 
-Desactivar y reactivar requiere confirmación y conserva identidad, presentaciones y
-auditoría. Los cambios guardan quién los hizo y el estado anterior/nuevo. Las peticiones
-repetidas no duplican registros; una edición obsoleta se rechaza y solicita actualizar
-el catálogo. No se muestran existencias ni se descuenta inventario en esta fase.
+La sección «Registrar venta», en el menú lateral, muestra tarjetas pequeñas agrupadas
+por categoría, filtros y búsqueda. Cada clic agrega una unidad al comprobante situado
+a la derecha; se pueden modificar cantidades o quitar productos y el total se actualiza
+al instante. El borrador se conserva al cambiar de sección durante la sesión.
+«Completar venta»
+calcula el total en el servidor, descuenta existencias y aumenta las cantidades vendidas
+en una sola transacción. Cancelar no modifica nada. Se rechazan cantidades fraccionarias,
+existencias insuficientes, versiones obsoletas y totales fuera del rango seguro.
+Reintentar la misma operación no duplica ventas ni reposiciones. Se conservan el importe,
+precios, productos, administrador y saldos antes/después de cada movimiento.
+Estas ventas son por presentaciones completas y requieren precio por unidad. La conversión
+de shots a ml y las recetas de cócteles siguen pendientes; el precio por shot se conserva.
+
+«Ventas guardadas» permite consultar los registros persistidos, en páginas de 20 ventas,
+con fecha, productos, cantidades, precios y total. Las ventas conservan los precios y nombres
+del momento de la compra aunque después se edite o elimine el producto. En Inventario,
+«Editar precio» abre el formulario de edición; al regresar a Registrar venta se actualizan
+los precios y existencias del borrador antes de confirmarlo.
+
+La interfaz no muestra imágenes ni controles de activo/inactivo. Los datos e imágenes
+anteriores se conservan para compatibilidad y respaldo. Los cambios guardan quién los
+hizo y el estado anterior/nuevo. Las peticiones repetidas no duplican registros;
+una edición obsoleta se rechaza y solicita actualizar el inventario.
+
+Cada fila tiene un botón «Eliminar» con confirmación. El producto desaparece del
+inventario, incluso al reiniciar; sus datos y el registro de quién lo eliminó se
+conservan en la base de datos para mantener el historial. Si quedan existencias,
+la confirmación muestra la cantidad. Un producto eliminado no se puede editar ni reactivar.
 
 Para cargar una nueva versión, cerrar la ventana anterior y volver a ejecutar npm start.
 Un segundo inicio mientras esté abierta recupera la instancia existente y no sustituye
@@ -192,8 +225,10 @@ el código que esa ventana ya cargó.
 
 Flyway aplica database/migrations al arrancar y conserva versiones y checksums en
 flyway_schema_history. V1 crea app_metadata; V2 añade administrator y administrator_audit;
-V3 añade product, sale_presentation y product_operation.
-No editar migraciones aplicadas: añadir V4__descripcion.sql, etc. No se utiliza ddl-auto
+V3 añade product, sale_presentation y product_operation; V4 añade las cantidades de inventario;
+V5 registra la eliminación de productos sin borrar su historial; V6 añade presentaciones,
+volúmenes, ventas y movimientos de inventario.
+No editar migraciones aplicadas: añadir V7__descripcion.sql, etc. No se utiliza ddl-auto
 y Flyway clean está deshabilitado. Si una base existente necesita migración, se genera
 antes un ZIP con una copia SQLite consistente, medios y manifiesto SHA-256; si falla,
 el arranque se detiene antes de migrar. La interfaz de restauración sigue pendiente.
@@ -219,7 +254,9 @@ npm run smoke
 
 Genera un directorio temporal exclusivo, crea un administrador de prueba mediante
 los formularios, cambia credenciales, comprueba un login fallido y uno correcto,
-crea un producto con imagen, edita, desactiva/reactiva y busca, consulta SQLite y cierra
+comprueba las ocho categorías obligatorias, presentaciones en ml, reposición, tarjetas,
+comprobante lateral y total en vivo, edición de precios, historial, venta de varios
+productos, cancelación, persistencia, búsqueda y eliminación, y cierra
 sesión y Java. No usar el flag manual sobre datos reales.
 También verifica que la ventana nativa pueda mostrarse. Utiliza un perfil Electron
 aislado para no reutilizar ni enfocar una instancia real que ya esté abierta.
@@ -231,7 +268,7 @@ Electron Builder está configurado para NSIS Windows x64, con conservación de d
 El empaquetado falla explícitamente si faltan el runtime Java, el JAR o el frontend.
 Ver [preparación del instalador](installer/README.md).
 
-La siguiente fase recomendada es el inventario trazable. Antes de desarrollarlo
-deben resolverse las reglas pendientes de
-shots, botellas, mermas y descuento de existencias. Se mantienen los requisitos de la
+Las siguientes etapas incluyen jornadas, caja, recetas, mermas y venta por shots con
+descuento de volumen. Antes deben resolverse las reglas de conversión y los tamaños
+de cada shot. Se mantienen los requisitos de la
 [propuesta inicial](docs/architecture/propuesta-inicial.md), con las aclaraciones de cada fase.
