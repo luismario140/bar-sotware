@@ -1,3 +1,4 @@
+import { displayName } from '../catalog/names'
 import { useCallback, useEffect, useState } from 'react'
 import { ProductEditor } from '../catalog/ProductEditor'
 import { money } from '../catalog/money'
@@ -51,7 +52,7 @@ export function ProductsPage() {
   const groups = [...CATEGORIES.map((name, index) => ({ name, number: index + 1, products: products.filter((product) => canonicalCategory(product.category) === name) })),
     ...(unclassified.length ? [{ name: 'Por clasificar', number: 0, products: unclassified }] : [])]
     .filter((group) => !category || group.name === category)
-    .map((group) => ({ ...group, products: group.products.filter((product) => searchText(`${product.id} ${product.name} ${product.category} ${packageLabel(product)}`).includes(searchText(search))).sort((a, b) => a.name.localeCompare(b.name, 'es')) }))
+    .map((group) => ({ ...group, products: group.products.filter((product) => searchText(`${product.id} ${displayName(product.name)} ${product.category} ${packageLabel(product)}`).includes(searchText(search))).sort((a, b) => a.name.localeCompare(b.name, 'es')) }))
     .filter((group) => !search.trim() || group.products.length > 0)
   return <section className="catalog-page">
     <div className="catalog-heading"><div><p className="form-description">Controla los productos y las existencias de tu bar.</p><p className="catalog-count">{products.length} productos · 8 categorías</p></div>
@@ -71,11 +72,11 @@ export function ProductsPage() {
             <thead><tr><th scope="col">ID</th><th scope="col">Nombre</th><th scope="col">Categoría</th><th scope="col" className="numeric-cell">Precio</th><th scope="col" className="numeric-cell">Cantidad vendida</th><th scope="col" className="numeric-cell">Cantidad restante</th></tr></thead>
             <tbody>{group.products.map((product) => <tr key={product.id} data-product-id={product.id}>
               <td className="inventory-id" title={product.id}>{product.id.slice(0, 8).toUpperCase()}</td>
-              <td><div className="inventory-name-actions"><div><button type="button" className="product-name-button" data-action="edit" onClick={() => { setMessage(''); setEditor({ product }) }} aria-label={`Editar ${product.name}`}>{product.name}</button>{packageLabel(product) && <small className="product-package">{packageLabel(product)}</small>}{requiresVolume(canonicalCategory(product.category) || '') && !product.volumeMl && <small className="product-package">Selecciona una presentación</small>}</div><button type="button" className="delete-product-button" data-action="delete" aria-label={`Eliminar ${product.name}`} onClick={() => { setMessage(''); setDeleteError(''); setDeletion({ product, operation: crypto.randomUUID() }) }}>Eliminar</button></div></td>
+              <td><div className="inventory-name-actions"><div><button type="button" className="product-name-button" data-action="edit" onClick={() => { setMessage(''); setEditor({ product }) }} aria-label={`Editar ${displayName(product.name)}`}>{displayName(product.name)}</button>{packageLabel(product) && <small className="product-package">{packageLabel(product)}</small>}{requiresVolume(canonicalCategory(product.category) || '') && !product.volumeMl && <small className="product-package">Selecciona una presentación</small>}</div><button type="button" className="delete-product-button" data-action="delete" aria-label={`Eliminar ${displayName(product.name)}`} onClick={() => { setMessage(''); setDeleteError(''); setDeletion({ product, operation: crypto.randomUUID() }) }}>Eliminar</button></div></td>
               <td>{canonicalCategory(product.category) || product.category || 'Por clasificar'}</td>
-              <td className="numeric-cell inventory-price">{product.unitPriceMinor !== null && <div>{money(product.unitPriceMinor)}{product.shotPriceMinor !== null && <small> / unidad</small>}</div>}{product.shotPriceMinor !== null && <div>{money(product.shotPriceMinor)}<small> / shot</small></div>}<button type="button" className="restock-button" data-action="edit-price" aria-label={`Editar precio de ${product.name}`} onClick={() => { setMessage(''); setEditor({ product }) }}>Editar precio</button></td>
+              <td className="numeric-cell inventory-price">{product.unitPriceMinor !== null && <div>{money(product.unitPriceMinor)}{product.shotPriceMinor !== null && <small> / unidad</small>}</div>}{product.shotPriceMinor !== null && <div>{money(product.shotPriceMinor)}<small> / shot</small></div>}<button type="button" className="restock-button" data-action="edit-price" aria-label={`Editar precio de ${displayName(product.name)}`} onClick={() => { setMessage(''); setEditor({ product }) }}>Editar precio</button></td>
               <td className="numeric-cell">{product.quantitySold.toLocaleString('es-CO')}</td>
-              <td className={`numeric-cell ${product.quantityRemaining === 0 ? 'stock-empty' : ''}`}><span data-quantity="remaining">{product.quantityRemaining.toLocaleString('es-CO')}</span><button type="button" className="restock-button" data-action="restock" aria-label={`Agregar existencias de ${product.name}`} onClick={() => { setMessage(''); setRestock(product) }}>+ Agregar existencias</button></td>
+              <td className={`numeric-cell ${product.quantityRemaining === 0 ? 'stock-empty' : product.quantityRemaining < 15 ? 'stock-low' : ''}`}><span data-quantity="remaining">{product.quantityRemaining.toLocaleString('es-CO')}</span>{product.quantityRemaining > 0 && product.quantityRemaining < 15 && <small className="stock-low-label">Stock bajo</small>}<button type="button" className="restock-button" data-action="restock" aria-label={`Agregar existencias de ${displayName(product.name)}`} onClick={() => { setMessage(''); setRestock(product) }}>+ Agregar existencias</button></td>
             </tr>)}</tbody>
           </table>
         </div></>}
@@ -84,7 +85,7 @@ export function ProductsPage() {
     {editor && <ProductEditor product={editor.product} initialCategory={editor.category} onClose={() => setEditor(null)} onSave={save} />}
     {restock && <RestockEditor product={restock} onClose={() => setRestock(null)} onSaved={(product) => { upsert(product); setRestock(null); setMessage('Existencias agregadas correctamente.') }} />}
     {deletion && <Modal title="Eliminar producto" busy={deleting} onClose={() => setDeletion(null)}>
-      <p>¿Eliminar <strong>{deletion.product.name}</strong> del inventario?</p>
+      <p>¿Eliminar <strong>{displayName(deletion.product.name)}</strong> del inventario?</p>
       <p className="form-description">Dejará de aparecer en la lista. Su historial se conservará.</p>
       {deletion.product.quantityRemaining > 0 && <p>Este producto todavía tiene <strong>{deletion.product.quantityRemaining.toLocaleString('es-CO')} unidades restantes</strong>.</p>}
       {deleteError && <p className="form-error" role="alert">{deleteError}</p>}

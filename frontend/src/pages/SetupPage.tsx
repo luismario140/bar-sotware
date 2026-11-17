@@ -1,3 +1,4 @@
+import { displayName } from '../catalog/names'
 import { useEffect, useState } from 'react'
 import { StatusCard } from '../components/StatusCard'
 import { getSystemHealth, type SystemHealth } from '../services/system'
@@ -39,6 +40,7 @@ export function SetupPage({ username, onLogout, onCredentialsChanged }: {
     <div className="app-shell">
       <aside className="sidebar">
         <a className="brand" href="#inicio"><span className="brand-icon">A</span>AppBarPOS</a>
+        <div className="sidebar-account"><strong>{displayName(username)}</strong><span>Administrador · Acceso local</span></div>
         <p className="sidebar-label">ADMINISTRACIÓN</p>
         <nav aria-label="Navegación principal">
           <button id="products-navigation" disabled={saleBusy} className={`nav-button ${section === 'products' ? 'nav-active' : ''}`} onClick={() => setSection('products')}>Inventario</button>
@@ -46,18 +48,19 @@ export function SetupPage({ username, onLogout, onCredentialsChanged }: {
           <button id="security-navigation" disabled={saleBusy} className={`nav-button ${section === 'security' ? 'nav-active' : ''}`} onClick={() => setSection('security')}>Acceso y seguridad</button>
           <button id="system-navigation" disabled={saleBusy} className={`nav-button ${section === 'system' ? 'nav-active' : ''}`} onClick={() => setSection('system')}>Estado del sistema</button>
         </nav>
-        <p className="sidebar-footer">{username}<br />Administrador · Acceso local</p>
-      </aside>
-      <main id="inicio">
-        <header className="page-header">
-          <div><p className="eyebrow">APPBARPOS / ADMINISTRACIÓN</p><h1>{section === 'products' ? 'Inventario' : section === 'sales' ? 'Registrar venta' : section === 'security' ? 'Acceso y seguridad' : 'Estado del sistema'}</h1></div>
-          <button id="logout" className="secondary-button" disabled={loggingOut || saleBusy} onClick={async () => {
+        <button id="logout" className="secondary-button sidebar-logout" disabled={loggingOut || saleBusy} onClick={async () => {
             setLoggingOut(true); setLogoutError('')
             try { await onLogout() } catch (failure) { setLogoutError(failure instanceof Error ? failure.message : 'No se pudo cerrar la sesión.') }
             finally { setLoggingOut(false) }
           }}>{loggingOut ? 'Cerrando…' : 'Cerrar sesión'}</button>
-        </header>
         {logoutError && <p className="form-error" role="alert">{logoutError}</p>}
+        <footer className="sidebar-footer">Desarrollado por Luis Mario<br /><span>AppBarPOS</span></footer>
+      </aside>
+      <main id="inicio" className={`app-main ${section === 'sales' ? 'app-main-sales' : ''}`}>
+        <header className="page-header">
+          <div><p className="eyebrow">APPBARPOS / ADMINISTRACIÓN</p><h1>{section === 'products' ? 'Inventario' : section === 'sales' ? 'Registrar venta' : section === 'security' ? 'Acceso y seguridad' : 'Estado del sistema'}</h1></div>
+        </header>
+        <div className={`page-content ${section === 'sales' ? 'page-content-sales' : section === 'products' ? 'page-content-inventory' : ''}`}>
         {section === 'products' ? <ProductsPage /> : section === 'sales' ? null : section === 'security' ? <CredentialsForm username={username} onChanged={onCredentialsChanged} /> : <>
         <section className="welcome">
           <p className="eyebrow">UN PUNTO DE PARTIDA PARA TU BAR</p>
@@ -75,7 +78,8 @@ export function SetupPage({ username, onLogout, onCredentialsChanged }: {
           <p role="status" className={error ? 'message error' : 'message'}>{error || (checking ? 'Comprobando el servicio y SQLite…' : available ? 'El backend y la base de datos responden correctamente.' : 'Pendiente de verificación.')}</p>
         </section>
         </>}
-        <div hidden={section !== 'sales'}><SalesPage active={section === 'sales'} onBusyChange={setSaleBusy} /></div>
+        <div className="sales-panel" hidden={section !== 'sales'}><SalesPage active={section === 'sales'} onBusyChange={setSaleBusy} /></div>
+        </div>
       </main>
     </div>
   )
