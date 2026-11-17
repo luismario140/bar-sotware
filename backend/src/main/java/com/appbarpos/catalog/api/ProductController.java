@@ -45,6 +45,12 @@ public class ProductController {
     public com.appbarpos.catalog.domain.SalesHistory sales(@RequestParam(defaultValue = "0") int page) {
         return service.sales(page);
     }
+    @GetMapping("/accounts")
+    public List<com.appbarpos.catalog.domain.OpenAccount> accounts() { return service.accounts(); }
+    @PostMapping("/accounts")
+    public com.appbarpos.catalog.domain.OpenAccount saveAccount(@RequestBody ProductCommands.SaveAccount input, HttpServletRequest request) {
+        return service.saveAccount(input, sessions.require(request).id());
+    }
     @GetMapping("/{id}/image")
     public ResponseEntity<byte[]> image(@PathVariable String id) throws java.io.IOException {
         return ResponseEntity.ok().header("Cache-Control", "no-store").header("X-Content-Type-Options", "nosniff")

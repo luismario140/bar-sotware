@@ -22,5 +22,12 @@ public final class ProductCommands {
     public record Delete(String operationId, Integer expectedVersion) { }
     public record Restock(String operationId, Integer expectedVersion, java.math.BigDecimal quantity) { }
     public record SaleLine(String productId, Integer expectedVersion, java.math.BigDecimal quantity) { }
-    public record Checkout(String operationId, java.util.List<SaleLine> lines) { }
+    public record Checkout(String operationId, java.util.List<SaleLine> lines, String paymentMethod,
+                           String accountName, String accountId, Integer accountVersion) {
+        public Checkout(String operationId, java.util.List<SaleLine> lines) {
+            this(operationId, lines, "EFECTIVO", null, null, null);
+        }
+    }
+    public record SaveAccount(String operationId, String accountId, Integer expectedVersion,
+                              String paymentMethod, String name, java.util.List<SaleLine> lines) { }
 }

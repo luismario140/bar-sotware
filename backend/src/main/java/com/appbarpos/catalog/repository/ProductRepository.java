@@ -69,8 +69,9 @@ public class ProductRepository {
     public Optional<Operation> operation(String id) {
         return jdbc.query("SELECT request_hash, result_json FROM product_operation WHERE id = ? UNION ALL SELECT request_hash, result_json FROM product_deletion WHERE operation_id = ? " +
                         "UNION ALL SELECT request_hash, result_json FROM inventory_movement WHERE operation_id = ? AND kind = 'RESTOCK' " +
-                        "UNION ALL SELECT request_hash, result_json FROM inventory_sale WHERE operation_id = ?",
-                (rs, row) -> new Operation(rs.getString(1), rs.getString(2)), id, id, id, id).stream().findFirst();
+                        "UNION ALL SELECT request_hash, result_json FROM inventory_sale WHERE operation_id = ? " +
+                        "UNION ALL SELECT request_hash, result_json FROM account_operation WHERE operation_id = ?",
+                (rs, row) -> new Operation(rs.getString(1), rs.getString(2)), id, id, id, id, id).stream().findFirst();
     }
 
     public void sale(String operation, long administrator, String hash, long total, String result, long now) {
@@ -80,6 +81,28 @@ public class ProductRepository {
     public List<String> sales(int page) {
         return jdbc.query("SELECT result_json FROM inventory_sale ORDER BY occurred_at DESC, operation_id DESC LIMIT 21 OFFSET ?",
                 (rs, row) -> rs.getString(1), page * 20);
+    }
+
+    public List<String> accounts() {
+        return jdbc.query("SELECT result_json FROM customer_account WHERE status = 'OPEN' ORDER BY updated_at DESC, id", (rs, row) -> rs.getString(1));
+    }
+
+    public Optional<String> account(String id) {
+        return jdbc.query("SELECT result_json FROM customer_account WHERE id = ? AND status = 'OPEN'", (rs, row) -> rs.getString(1), id).stream().findFirst();
+    }
+
+    public void account(com.appbarpos.catalog.domain.OpenAccount account, boolean create, String operation, long administrator, String hash, String result, long now) {
+        if (create) jdbc.update("INSERT INTO customer_account VALUES (?, ?, 'OPEN', ?, ?, ?, NULL)", account.id(), account.version(), result, account.createdAt(), now);
+        else {
+            int changed = jdbc.update("UPDATE customer_account SET version = ?, result_json = ?, updated_at = ? WHERE id = ? AND version = ? AND status = 'OPEN'", account.version(), result, now, account.id(), account.version() - 1);
+            if (changed != 1) throw com.appbarpos.catalog.application.CatalogException.invalid("La cuenta cambió. Vuelve a abrirla.");
+        }
+        jdbc.update("INSERT INTO account_operation VALUES (?, ?, ?, ?, ?, ?)", operation, account.id(), administrator, hash, result, now);
+    }
+
+    public void closeAccount(String id, int version, String sale, long now) {
+        int changed = jdbc.update("UPDATE customer_account SET status = 'CLOSED', version = version + 1, updated_at = ?, closed_sale_id = ? WHERE id = ? AND version = ? AND status = 'OPEN'", now, sale, id, version);
+        if (changed != 1) throw com.appbarpos.catalog.application.CatalogException.invalid("La cuenta cambió. Vuelve a abrirla.");
     }
 
     public void movement(String operation, String product, String sale, long administrator, String kind, long quantity,

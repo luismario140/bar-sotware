@@ -53,6 +53,76 @@ class CatalogServiceTest {
     }
 
     @Test
+    void openAccountsReserveStockCanBeResumedAndAreChargedOnlyOnce() throws Exception {
+        var product = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
+                "Cerveza", "Cervezas", true, "6000", null, null, false, 0L, 10L), 1);
+        var command = new ProductCommands.SaveAccount(UUID.randomUUID().toString(), null, null, "EFECTIVO", "  amigos  ", java.util.List.of(
+                new ProductCommands.SaleLine(product.id(), product.version(), new java.math.BigDecimal("3"))));
+        var account = service.saveAccount(command, 1);
+        assertThat(account.name()).isEqualTo("amigos");
+        assertThat(service.saveAccount(command, 1)).isEqualTo(account);
+        assertThat(service.accounts()).containsExactly(account);
+        assertThat(service.find(product.id()).quantityRemaining()).isEqualTo(7);
+        assertThat(service.find(product.id()).quantitySold()).isZero();
+        assertThat(service.sales(0).sales()).isEmpty();
+        var reserved = service.find(product.id());
+        assertThatThrownBy(() -> service.delete(product.id(), new ProductCommands.Delete(UUID.randomUUID().toString(), reserved.version()), 1)).isInstanceOf(CatalogException.class);
+        var changedPrice = service.save(product.id(), new ProductCommands.Save(UUID.randomUUID().toString(), reserved.version(),
+                "Cerveza", "Cervezas", true, "8000", null, null, false), 1);
+        var updated = service.saveAccount(new ProductCommands.SaveAccount(UUID.randomUUID().toString(), account.id(), account.version(), "TRANSFERENCIA", null, java.util.List.of(
+                new ProductCommands.SaleLine(product.id(), changedPrice.version(), new java.math.BigDecimal("5")))), 1);
+        assertThat(updated.totalMinor()).isEqualTo(3_000_000);
+        assertThat(updated.name()).isNull();
+        assertThat(service.find(product.id()).quantityRemaining()).isEqualTo(5);
+        assertThatThrownBy(() -> service.saveAccount(new ProductCommands.SaveAccount(UUID.randomUUID().toString(), account.id(), account.version(), "EFECTIVO", null, command.lines()), 1)).isInstanceOf(CatalogException.class);
+        var checkout = new ProductCommands.Checkout(UUID.randomUUID().toString(), java.util.List.of(
+                new ProductCommands.SaleLine(product.id(), service.find(product.id()).version(), new java.math.BigDecimal("5"))), "TRANSFERENCIA", null, updated.id(), updated.version());
+        jdbc.execute("CREATE TRIGGER fail_account_close BEFORE UPDATE ON customer_account WHEN NEW.status = 'CLOSED' BEGIN SELECT RAISE(ABORT, 'controlled failure'); END");
+        assertThatThrownBy(() -> service.checkout(checkout, 1)).isInstanceOf(org.springframework.dao.DataAccessException.class);
+        assertThat(service.find(product.id()).quantityRemaining()).isEqualTo(5);
+        assertThat(service.find(product.id()).quantitySold()).isZero();
+        assertThat(service.sales(0).sales()).isEmpty();
+        jdbc.execute("DROP TRIGGER fail_account_close");
+        var sale = service.checkout(checkout, 1);
+        assertThat(service.checkout(checkout, 1)).isEqualTo(sale);
+        assertThat(sale.paymentMethod()).isEqualTo("TRANSFERENCIA");
+        assertThat(sale.accountId()).isEqualTo(account.id());
+        assertThat(sale.totalMinor()).isEqualTo(3_000_000);
+        assertThat(service.find(product.id()).quantityRemaining()).isEqualTo(5);
+        assertThat(service.find(product.id()).quantitySold()).isEqualTo(5);
+        assertThat(service.accounts()).isEmpty();
+        assertThat(service.sales(0).sales()).containsExactly(sale);
+        assertThatThrownBy(() -> service.checkout(new ProductCommands.Checkout(UUID.randomUUID().toString(), checkout.lines(), "EFECTIVO", null, updated.id(), updated.version()), 1)).isInstanceOf(CatalogException.class);
+    }
+
+    @Test
+    void accountEditsReleaseRemovedProductsAndValidatePaymentAndName() throws Exception {
+        var first = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
+                "Cerveza", "Cervezas", true, "6000", null, null, false, 0L, 10L), 1);
+        var second = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
+                "Otra", "Cervezas", true, "7000", null, null, false, 0L, 10L), 1);
+        var lines = java.util.List.of(new ProductCommands.SaleLine(first.id(), first.version(), new java.math.BigDecimal("2")),
+                new ProductCommands.SaleLine(second.id(), second.version(), new java.math.BigDecimal("3")));
+        for (String invalid : new String[]{"", "TARJETA"}) {
+            assertThatThrownBy(() -> service.checkout(new ProductCommands.Checkout(UUID.randomUUID().toString(), lines, invalid, null, null, null), 1)).isInstanceOf(CatalogException.class);
+            assertThatThrownBy(() -> service.saveAccount(new ProductCommands.SaveAccount(UUID.randomUUID().toString(), null, null, invalid, null, lines), 1)).isInstanceOf(CatalogException.class);
+        }
+        assertThatThrownBy(() -> service.checkout(new ProductCommands.Checkout(UUID.randomUUID().toString(), lines, null, null, null, null), 1)).isInstanceOf(CatalogException.class);
+        assertThatThrownBy(() -> service.saveAccount(new ProductCommands.SaveAccount(UUID.randomUUID().toString(), null, null, "EFECTIVO", "a".repeat(81), lines), 1)).isInstanceOf(CatalogException.class);
+        var account = service.saveAccount(new ProductCommands.SaveAccount(UUID.randomUUID().toString(), null, null, "EFECTIVO", "", lines), 1);
+        assertThat(account.name()).isNull();
+        var updated = service.saveAccount(new ProductCommands.SaveAccount(UUID.randomUUID().toString(), account.id(), account.version(), "EFECTIVO", null,
+                java.util.List.of(new ProductCommands.SaleLine(first.id(), service.find(first.id()).version(), java.math.BigDecimal.ONE))), 1);
+        assertThat(service.find(first.id()).quantityRemaining()).isEqualTo(9);
+        assertThat(service.find(second.id()).quantityRemaining()).isEqualTo(10);
+        assertThat(updated.lines()).hasSize(1);
+        // Receipts written before payment methods were introduced remain readable.
+        var mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+        String legacy = "{\"id\":\"legacy\",\"totalMinor\":0,\"lines\":[],\"occurredAt\":0}";
+        assertThat(mapper.readValue(legacy, com.appbarpos.catalog.domain.SaleReceipt.class).paymentMethod()).isNull();
+    }
+
+    @Test
     void salesHistoryKeepsOriginalPricesAfterEditingAndDeletingProductsAndPaginates() throws Exception {
         var product = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
                 "Nombre original", "Cervezas", true, "6000", null, null, false, 0L, 30L), 1);

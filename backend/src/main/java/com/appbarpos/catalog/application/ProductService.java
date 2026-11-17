@@ -5,6 +5,7 @@ import com.appbarpos.catalog.domain.Product;
 import com.appbarpos.catalog.domain.CatalogCategories;
 import com.appbarpos.catalog.domain.SaleReceipt;
 import com.appbarpos.catalog.domain.SalesHistory;
+import com.appbarpos.catalog.domain.OpenAccount;
 import com.appbarpos.catalog.infrastructure.ProductImages;
 import com.appbarpos.catalog.repository.ProductRepository;
 import java.math.BigDecimal;
@@ -38,6 +39,88 @@ public class ProductService {
     }
 
     public List<Product> list() { return repository.list(); }
+    public List<OpenAccount> accounts() {
+        return repository.accounts().stream().map(value -> json.readValue(value, OpenAccount.class)).toList();
+    }
+
+    private OpenAccount account(String id, Integer expectedVersion) {
+        uuid(id);
+        var account = repository.account(id).map(value -> json.readValue(value, OpenAccount.class))
+                .orElseThrow(() -> CatalogException.invalid("La cuenta ya se cerró o no existe."));
+        if (expectedVersion == null || account.version() != expectedVersion) {
+            throw new CatalogException(HttpStatus.CONFLICT, "VERSION_CONFLICT", "La cuenta cambió. Vuelve a abrirla antes de guardar.");
+        }
+        return account;
+    }
+
+    private String payment(String value) {
+        if (!"EFECTIVO".equals(value) && !"TRANSFERENCIA".equals(value)) throw CatalogException.invalid("Selecciona Efectivo o Transferencia.");
+        return value;
+    }
+
+    private String accountName(String value) {
+        String name = value == null ? "" : value.strip();
+        if (name.length() > 80 || name.codePoints().anyMatch(Character::isISOControl)) throw CatalogException.invalid("El nombre de la cuenta admite hasta 80 caracteres y no admite saltos de línea.");
+        return name.isEmpty() ? null : name;
+    }
+
+    private SaleReceipt.Line reserved(OpenAccount account, String product) {
+        return account == null ? null : account.lines().stream().filter(line -> line.product().id().equals(product)).findFirst().orElse(null);
+    }
+
+    private void releaseRemoved(OpenAccount account, java.util.Set<String> kept) {
+        if (account == null) return;
+        for (var line : account.lines()) {
+            if (!kept.contains(line.product().id())) {
+                var current = find(line.product().id());
+                repository.save(withStock(current, current.quantitySold(), addQuantity(current.quantityRemaining(), line.quantity())), false, clock.millis());
+            }
+        }
+    }
+
+    public synchronized OpenAccount saveAccount(ProductCommands.SaveAccount input, long administrator) {
+        uuid(input.operationId());
+        String method = payment(input.paymentMethod()), name = accountName(input.name());
+        if (input.lines() == null || input.lines().isEmpty() || input.lines().size() > 100) throw CatalogException.invalid("Agrega entre 1 y 100 productos a la cuenta.");
+        String hash = hash(json.writeValueAsString(List.of("SAVE_ACCOUNT", input, administrator)));
+        return transaction.execute(status -> {
+            OpenAccount replayed = replay(input.operationId(), hash, OpenAccount.class);
+            if (replayed != null) return replayed;
+            OpenAccount previous = input.accountId() == null ? null : account(input.accountId(), input.expectedVersion());
+            if (previous == null && input.expectedVersion() != null) throw CatalogException.invalid("La versión de la cuenta no es válida.");
+            var ids = new HashSet<String>();
+            var lines = new ArrayList<SaleReceipt.Line>();
+            long total = 0;
+            for (var item : input.lines()) {
+                if (item == null) throw CatalogException.invalid("Revisa los productos de la cuenta.");
+                uuid(item.productId());
+                if (!ids.add(item.productId())) throw CatalogException.invalid("Cada producto debe aparecer una sola vez en la cuenta.");
+                long amount = positiveQuantity(item.quantity());
+                Product before = find(item.productId());
+                version(before, item.expectedVersion());
+                var old = reserved(previous, before.id());
+                long available = addQuantity(before.quantityRemaining(), old == null ? 0 : old.quantity());
+                if (available < amount) throw CatalogException.invalid("No hay existencias suficientes de " + before.name() + ".");
+                CatalogCategories.require(before.category());
+                if (CatalogCategories.requiresVolume(before.category()) && (before.packageKind() == null || before.volumeMl() == null)) throw CatalogException.invalid("Configura la presentación de " + before.name() + ".");
+                Long price = old == null ? before.unitPriceMinor() : old.unitPriceMinor();
+                if (price == null) throw CatalogException.invalid("Configura el precio por unidad de " + before.name() + ".");
+                long subtotal;
+                try { subtotal = Math.multiplyExact(price, amount); total = Math.addExact(total, subtotal); }
+                catch (ArithmeticException overflow) { throw CatalogException.invalid("El total de la cuenta supera el rango permitido."); }
+                if (total > 9_007_199_254_740_991L) throw CatalogException.invalid("El total de la cuenta supera el rango permitido.");
+                Product after = withStock(before, before.quantitySold(), available - amount);
+                repository.save(after, false, clock.millis());
+                lines.add(new SaleReceipt.Line(after, amount, price, subtotal));
+            }
+            releaseRemoved(previous, ids);
+            long now = clock.millis();
+            var result = new OpenAccount(previous == null ? UUID.randomUUID().toString() : previous.id(), previous == null ? 1 : previous.version() + 1,
+                    method, name, total, List.copyOf(lines), previous == null ? now : previous.createdAt(), now);
+            repository.account(result, previous == null, input.operationId(), administrator, hash, json.writeValueAsString(result), now);
+            return result;
+        });
+    }
     public SalesHistory sales(int page) {
         if (page < 0 || page > 1_000_000) throw CatalogException.invalid("La página de ventas no es válida.");
         var results = repository.sales(page);
@@ -126,6 +209,7 @@ public class ProductService {
             if (previousResult != null) return previousResult;
             Product before = find(id);
             version(before, input.expectedVersion());
+            if (accounts().stream().anyMatch(account -> reserved(account, id) != null)) throw CatalogException.invalid("El producto está reservado en una cuenta abierta. Cierra esa cuenta antes de eliminarlo.");
             repository.delete(input.operationId(), id, administrator, hash, json.writeValueAsString(before), clock.millis());
             return before;
         });
@@ -150,6 +234,7 @@ public class ProductService {
 
     public synchronized SaleReceipt checkout(ProductCommands.Checkout input, long administrator) {
         uuid(input.operationId());
+        String method = payment(input.paymentMethod()), name = accountName(input.accountName());
         if (input.lines() == null || input.lines().isEmpty() || input.lines().size() > 100) {
             throw CatalogException.invalid("Agrega entre 1 y 100 productos a la venta.");
         }
@@ -157,6 +242,8 @@ public class ProductService {
         return transaction.execute(status -> {
             SaleReceipt previousResult = replay(input.operationId(), hash, SaleReceipt.class);
             if (previousResult != null) return previousResult;
+            OpenAccount open = input.accountId() == null ? null : account(input.accountId(), input.accountVersion());
+            if (open == null && input.accountVersion() != null) throw CatalogException.invalid("La versión de la cuenta no es válida.");
             var ids = new HashSet<String>();
             var beforeProducts = new ArrayList<Product>();
             var lines = new ArrayList<SaleReceipt.Line>();
@@ -172,19 +259,24 @@ public class ProductService {
                 if (CatalogCategories.requiresVolume(category) && (before.packageKind() == null || before.volumeMl() == null)) {
                     throw CatalogException.invalid("Configura la presentación de " + before.name() + " antes de venderlo.");
                 }
-                if (before.unitPriceMinor() == null) throw CatalogException.invalid("Configura el precio por unidad de " + before.name() + " antes de venderlo.");
-                if (before.quantityRemaining() < amount) throw CatalogException.invalid("No hay existencias suficientes de " + before.name() + ".");
+                var old = reserved(open, before.id());
+                Long price = old == null ? before.unitPriceMinor() : old.unitPriceMinor();
+                if (price == null) throw CatalogException.invalid("Configura el precio por unidad de " + before.name() + " antes de venderlo.");
+                long available = addQuantity(before.quantityRemaining(), old == null ? 0 : old.quantity());
+                if (available < amount) throw CatalogException.invalid("No hay existencias suficientes de " + before.name() + ".");
                 long subtotal;
-                try { subtotal = Math.multiplyExact(before.unitPriceMinor(), amount); total = Math.addExact(total, subtotal); }
+                try { subtotal = Math.multiplyExact(price, amount); total = Math.addExact(total, subtotal); }
                 catch (ArithmeticException overflow) { throw CatalogException.invalid("El total de la venta supera el rango permitido."); }
                 if (total > 9_007_199_254_740_991L) throw CatalogException.invalid("El total de la venta supera el rango permitido.");
-                Product after = withStock(before, addQuantity(before.quantitySold(), amount), before.quantityRemaining() - amount);
+                Product after = withStock(before, addQuantity(before.quantitySold(), amount), available - amount);
                 beforeProducts.add(before);
-                lines.add(new SaleReceipt.Line(after, amount, before.unitPriceMinor(), subtotal));
+                lines.add(new SaleReceipt.Line(after, amount, price, subtotal));
             }
             long now = clock.millis();
-            var receipt = new SaleReceipt(input.operationId(), total, List.copyOf(lines), now);
+            var receipt = new SaleReceipt(input.operationId(), total, List.copyOf(lines), now, method, name, open == null ? null : open.id());
             repository.sale(input.operationId(), administrator, hash, total, json.writeValueAsString(receipt), now);
+            releaseRemoved(open, ids);
+            if (open != null) repository.closeAccount(open.id(), open.version(), receipt.id(), now);
             for (int index = 0; index < lines.size(); index++) {
                 var line = lines.get(index);
                 repository.save(line.product(), false, now);
