@@ -1,3 +1,5 @@
+import { PinField } from './PinField'
+import { UsernameField } from './UsernameField'
 import { displayName } from '../catalog/names'
 import { useState, type FormEvent } from 'react'
 import { useAuthAction } from '../auth/useAuthAction'
@@ -30,20 +32,21 @@ export function CredentialsForm({ username: original, onChanged }: { username: s
     })
   }
 
-  return <section className="security-panel">
+  return <div className="security-layout"><section className="security-panel">
+    <p className="eyebrow">CREDENCIALES DEL ADMINISTRADOR</p>
     <h2>Cambiar usuario o PIN</h2>
     <p className="form-description">Confirma tu PIN actual para guardar los cambios. Tu inventario e historial se conservarán.</p>
     <form className="access-form credentials-form" onSubmit={prepare}>
       <fieldset disabled={confirming || action.busy}>
         <label htmlFor="security-username">Usuario</label>
-        <input id="security-username" name="username" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required maxLength={60} />
+        <UsernameField id="security-username" value={username} onChange={setUsername} />
         <label htmlFor="security-current-pin">PIN actual</label>
-        <input id="security-current-pin" name="currentPin" type="password" inputMode="numeric" pattern="[0-9]{4,12}" minLength={4} maxLength={12} autoComplete="current-password" value={currentPin} onChange={(event) => setCurrentPin(event.target.value)} required />
+        <PinField id="security-current-pin" name="currentPin" autoComplete="current-password" value={currentPin} onChange={setCurrentPin} />
         <label htmlFor="security-pin">Nuevo PIN</label>
-        <input id="security-pin" name="pin" type="password" inputMode="numeric" pattern="[0-9]{4,12}" minLength={4} maxLength={12} autoComplete="new-password" value={pin} onChange={(event) => setPin(event.target.value)} required />
-        <p className="field-help">Para cambiar solo el usuario, repite aquí tu PIN actual.</p>
+        <PinField id="security-pin" name="pin" autoComplete="new-password" value={pin} onChange={setPin} />
+        <p className="field-help">El nuevo PIN debe tener 4 dígitos. Para conservar un PIN actual de 4 dígitos, repítelo aquí.</p>
         <label htmlFor="security-confirmation">Confirmar nuevo PIN</label>
-        <input id="security-confirmation" name="confirmation" type="password" inputMode="numeric" pattern="[0-9]{4,12}" minLength={4} maxLength={12} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required />
+        <PinField id="security-confirmation" name="confirmation" autoComplete="new-password" value={confirmation} onChange={setConfirmation} />
       </fieldset>
       <AuthFeedback error={action.error} remaining={action.remaining} />
       {!confirming ? <button type="submit" disabled={action.busy || action.remaining > 0}>Guardar cambios</button> :
@@ -54,4 +57,17 @@ export function CredentialsForm({ username: original, onChanged }: { username: s
         </div>}
     </form>
   </section>
+  <aside className="security-guidelines" aria-labelledby="security-guidelines-title">
+    <p className="eyebrow">CUIDA EL ACCESO A TU BAR</p>
+    <h2 id="security-guidelines-title">Reglas de uso seguro</h2>
+    <p>Buenas prácticas para el administrador de este equipo.</p>
+    <ol>
+      <li><strong>Un acceso personal.</strong><span>No compartas tu usuario ni tu PIN con otras personas.</span></li>
+      <li><strong>Elige bien tus 4 dígitos.</strong><span>Evita secuencias, números repetidos y fechas fáciles de adivinar.</span></li>
+      <li><strong>Cierra tu sesión.</strong><span>Usa «Cerrar sesión» cuando termines o dejes el puesto sin supervisión.</span></li>
+      <li><strong>Protege este equipo.</strong><span>Bloquea Windows al alejarte y conserva una copia de seguridad de tus datos en un lugar seguro.</span></li>
+    </ol>
+    <div className="security-notice"><strong>Sobre tu acceso</strong><p>El PIN se almacena como un hash, no como texto visible. Los intentos fallidos repetidos activan un bloqueo temporal. Cambiar las credenciales cierra la sesión.</p></div>
+  </aside>
+  </div>
 }

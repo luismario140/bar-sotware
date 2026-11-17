@@ -67,8 +67,8 @@ public class AuthService {
 
     public synchronized void change(long credentialVersion, String currentPin, String username, String pin) {
         String normalized = validate(username, pin);
-        if (currentPin == null || !currentPin.matches("[0-9]{4,12}")) {
-            throw new AuthException(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "Introduce el PIN actual de 4 a 12 dígitos.");
+        if (currentPin == null || !currentPin.matches("[0-9]{4}")) {
+            throw new AuthException(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "Introduce el PIN actual de 4 dígitos.");
         }
         Outcome outcome = transaction.execute(status -> {
             Administrator admin = repository.find().orElseThrow(AuthService::unauthenticated);
@@ -108,9 +108,9 @@ public class AuthService {
 
     private String validate(String username, String pin) {
         if (username == null || username.strip().isEmpty() || username.strip().length() > 60 ||
-                username.codePoints().anyMatch(Character::isISOControl) || pin == null || !pin.matches("[0-9]{4,12}")) {
+                username.codePoints().anyMatch(Character::isISOControl) || pin == null || !pin.matches("[0-9]{4}")) {
             throw new AuthException(HttpStatus.BAD_REQUEST, "INVALID_INPUT",
-                    "Introduce un usuario de 1 a 60 caracteres y un PIN de 4 a 12 dígitos.");
+                    "Introduce un usuario de 1 a 60 caracteres y un PIN de 4 dígitos.");
         }
         return username.strip();
     }

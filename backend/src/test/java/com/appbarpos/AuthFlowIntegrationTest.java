@@ -48,36 +48,37 @@ class AuthFlowIntegrationTest {
             assertThat(send(first, "session", null, true).body()).contains("\"configured\":false", "\"authenticated\":false");
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM administrator", Integer.class)).isZero();
 
-            var setup = send(first, "setup", credentials("operator-test", "004731"), true);
+            assertThat(send(first, "setup", credentials("operator-test", "003100"), true).statusCode()).isEqualTo(400);
+            var setup = send(first, "setup", credentials("operator-test", "0031"), true);
             assertThat(setup.statusCode()).isEqualTo(201);
             assertThat(setup.headers().firstValue("Set-Cookie").orElseThrow())
                     .contains("APPBARPOS_SESSION=", "HttpOnly", "SameSite=Strict", "Path=/api");
             assertThat(setup.headers().firstValue("Cache-Control")).contains("no-store");
-            assertThat(setup.body()).doesNotContain("004731", "pinHash", "pin_hash", TOKEN);
+            assertThat(setup.body()).doesNotContain("0031", "pinHash", "pin_hash", TOKEN);
             String hash = jdbc.queryForObject("SELECT pin_hash FROM administrator", String.class);
-            assertThat(hash).startsWith("{pbkdf2@SpringSecurity_v5_8}").doesNotContain("004731");
-            assertThat(encoder.matches("004731", hash)).isTrue();
-            assertThat(send(second, "setup", credentials("other-test", "998877"), true).statusCode()).isEqualTo(409);
+            assertThat(hash).startsWith("{pbkdf2@SpringSecurity_v5_8}").doesNotContain("0031");
+            assertThat(encoder.matches("0031", hash)).isTrue();
+            assertThat(send(second, "setup", credentials("other-test", "9988"), true).statusCode()).isEqualTo(409);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM administrator", Integer.class)).isEqualTo(1);
 
-            assertThat(send(anonymous, "credentials", change("004731", "intruder", "123456"), true).statusCode()).isEqualTo(401);
+            assertThat(send(anonymous, "credentials", change("0031", "intruder", "1234"), true).statusCode()).isEqualTo(401);
             var originRequest = HttpRequest.newBuilder(uri("session")).header("X-AppBarPOS-Token", TOKEN)
                     .header("Origin", "https://untrusted.example").GET().build();
             assertThat(anonymous.send(originRequest, HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(403);
 
-            assertThat(send(second, "login", credentials("wrong-user", "004731"), true).body())
-                    .isEqualTo(send(second, "login", credentials("operator-test", "555555"), true).body());
-            assertThat(send(second, "login", credentials("operator-test", "004731"), true).statusCode()).isEqualTo(200);
+            assertThat(send(second, "login", credentials("wrong-user", "0031"), true).body())
+                    .isEqualTo(send(second, "login", credentials("operator-test", "5555"), true).body());
+            assertThat(send(second, "login", credentials("operator-test", "0031"), true).statusCode()).isEqualTo(200);
 
             jdbc.update("INSERT INTO app_metadata VALUES ('business-sentinel', 'unchanged')");
-            assertThat(send(first, "credentials", change("555555", "updated-test", "001982"), true).statusCode()).isEqualTo(401);
+            assertThat(send(first, "credentials", change("5555", "updated-test", "0082"), true).statusCode()).isEqualTo(401);
             assertThat(jdbc.queryForObject("SELECT username FROM administrator", String.class)).isEqualTo("operator-test");
-            assertThat(send(first, "credentials", change("004731", "updated-test", "001982"), true).statusCode()).isEqualTo(204);
+            assertThat(send(first, "credentials", change("0031", "updated-test", "0082"), true).statusCode()).isEqualTo(204);
             assertThat(send(first, "session", null, true).body()).contains("\"authenticated\":false");
             assertThat(send(second, "session", null, true).body()).contains("\"authenticated\":false");
-            assertThat(send(second, "credentials", change("001982", "invalid", "001983"), true).statusCode()).isEqualTo(401);
-            assertThat(send(first, "login", credentials("operator-test", "004731"), true).statusCode()).isEqualTo(401);
-            var login = send(first, "login", credentials("updated-test", "001982"), true);
+            assertThat(send(second, "credentials", change("0082", "invalid", "0083"), true).statusCode()).isEqualTo(401);
+            assertThat(send(first, "login", credentials("operator-test", "0031"), true).statusCode()).isEqualTo(401);
+            var login = send(first, "login", credentials("updated-test", "0082"), true);
             assertThat(login.statusCode()).isEqualTo(200);
             assertThat(login.body()).contains("updated-test");
             assertThat(jdbc.queryForObject("SELECT id FROM administrator", Integer.class)).isEqualTo(1);
@@ -88,10 +89,10 @@ class AuthFlowIntegrationTest {
             assertThat(send(first, "logout", null, true).statusCode()).isEqualTo(204);
 
             for (int attempt = 1; attempt <= 5; attempt++) {
-                assertThat(send(first, "login", credentials("updated-test", "999999"), true).statusCode())
+                assertThat(send(first, "login", credentials("updated-test", "9999"), true).statusCode())
                         .isEqualTo(attempt < 5 ? 401 : 429);
             }
-            var blocked = send(first, "login", credentials("updated-test", "001982"), true);
+            var blocked = send(first, "login", credentials("updated-test", "0082"), true);
             assertThat(blocked.statusCode()).isEqualTo(429);
             assertThat(Long.parseLong(blocked.headers().firstValue("Retry-After").orElseThrow())).isPositive();
             assertThat(jdbc.queryForObject("SELECT locked_until FROM administrator", Long.class)).isGreaterThan(System.currentTimeMillis());

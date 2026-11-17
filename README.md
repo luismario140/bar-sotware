@@ -162,7 +162,7 @@ $env:APPBARPOS_DATA_DIR = Join-Path $env:TEMP 'AppBarPOS-desarrollo'
 
 No hay usuarios ni PIN precargados. El primer administrador elige su acceso en la
 aplicación; el PIN se guarda con hash PBKDF2, sal y prefijo de algoritmo. Se aceptan
-4 a 12 dígitos, incluidos ceros iniciales. El nombre distingue mayúsculas/minúsculas.
+4 dígitos, incluidos ceros iniciales. El nombre distingue mayúsculas/minúsculas.
 Cinco fallos bloquean nuevos intentos durante un minuto, incluso al reiniciar.
 La sesión expira tras 30 minutos sin solicitudes autenticadas y al reiniciar el backend.
 En «Acceso y seguridad», cambiar credenciales requiere el PIN actual y confirmación;

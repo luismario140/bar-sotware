@@ -1,3 +1,5 @@
+import { PinField } from '../components/PinField'
+import { UsernameField } from '../components/UsernameField'
 import { useState, type FormEvent } from 'react'
 import { useAuthAction } from '../auth/useAuthAction'
 import { AuthFeedback } from '../components/AuthFeedback'
@@ -46,13 +48,13 @@ export function AuthPage({ configured, message, onAuthenticated, onConfigured }:
         {message && <p className="form-success" role="status">{message}</p>}
         <form onSubmit={submit} className="access-form">
           <label htmlFor="access-username">Usuario</label>
-          <input id="access-username" name="username" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required maxLength={60} disabled={action.busy} autoFocus />
+          <UsernameField id="access-username" value={username} onChange={setUsername} disabled={action.busy} autoFocus />
           <label htmlFor="access-pin">PIN</label>
-          <input id="access-pin" name="pin" type={visible ? 'text' : 'password'} inputMode="numeric" pattern="[0-9]{4,12}" minLength={4} maxLength={12} autoComplete={configured ? 'current-password' : 'new-password'} value={pin} onChange={(event) => setPin(event.target.value)} required disabled={action.busy} aria-describedby="pin-help" />
-          <p id="pin-help" className="field-help">De 4 a 12 dígitos. Los ceros al inicio se conservan.</p>
+          <PinField id="access-pin" name="pin" visible={visible} autoComplete={configured ? 'current-password' : 'new-password'} value={pin} onChange={setPin} disabled={action.busy} describedBy="pin-help" />
+          <p id="pin-help" className="field-help">Usa tu PIN de 4 dígitos. Los ceros al inicio se conservan.</p>
           {!configured && <>
             <label htmlFor="access-confirmation">Confirmar PIN</label>
-            <input id="access-confirmation" name="confirmation" type={visible ? 'text' : 'password'} inputMode="numeric" pattern="[0-9]{4,12}" minLength={4} maxLength={12} autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required disabled={action.busy} />
+            <PinField id="access-confirmation" name="confirmation" visible={visible} autoComplete="new-password" value={confirmation} onChange={setConfirmation} disabled={action.busy} />
           </>}
           <button type="button" className="text-button pin-toggle" aria-pressed={visible} onClick={() => setVisible((value) => !value)}>{visible ? 'Ocultar PIN' : 'Mostrar PIN'}</button>
           <AuthFeedback error={action.error} remaining={action.remaining} />
