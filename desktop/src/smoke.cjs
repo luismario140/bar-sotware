@@ -20,7 +20,7 @@ async function runSmoke(window, backend, dataDirectory) {
       const deadline = Date.now() + 15000;
       const timer = setInterval(() => {
         if (${expression}) { clearInterval(timer); resolve(true); }
-        else if (Date.now() > deadline) { clearInterval(timer); reject(new Error('La interfaz no alcanzó el estado esperado.')); }
+        else if (Date.now() > deadline) { clearInterval(timer); reject(new Error('La interfaz no alcanzó el estado esperado: ' + ${JSON.stringify(expression)})); }
       }, 100);
     })`)
   }

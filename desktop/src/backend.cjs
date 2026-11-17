@@ -108,6 +108,10 @@ async function startBackend({ packaged, resourcesPath, dataDirectory }) {
       if (operation === 'list') return request('/api/products', 'GET')
       if (operation === 'create') return request('/api/products', 'POST', payload)
       if (operation === 'checkout') return request('/api/products/sales', 'POST', payload)
+      if (operation === 'accounts') return request('/api/products/accounts', 'GET')
+      if (operation === 'saveAccount') return request('/api/products/accounts', 'POST', payload)
+      if (operation === 'cancelAccount') return request('/api/products/accounts/cancel', 'POST', payload)
+      if (operation === 'cancelledAccounts') return request('/api/products/accounts/cancellations', 'GET')
       if (operation === 'sales') {
         const page = payload?.page ?? 0
         if (!Number.isInteger(page) || page < 0 || page > 1000000) throw new Error('La página de ventas no es válida.')
