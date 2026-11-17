@@ -5,7 +5,7 @@ const backupDate = new Intl.DateTimeFormat('es-CO', {
   day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
 })
 
-export function AppFooter() {
+export function AppFooter({ className = '' }: { className?: string }) {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [failed, setFailed] = useState(false)
   const desktop = Boolean(window.appbarpos)
@@ -27,7 +27,7 @@ export function AppFooter() {
 
   const timestamp = info?.lastBackupAt ? new Date(info.lastBackupAt) : null
   const validDate = timestamp && !Number.isNaN(timestamp.getTime()) ? timestamp : null
-  return <footer className="sidebar-footer">
+  return <footer className={`sidebar-footer ${className}`.trim()}>
     <div className="footer-version">AppBarPOS <span>{info ? `v${info.version}` : !desktop ? '· Web' : failed ? '· Versión no disponible' : '· Consultando versión…'}</span></div>
     <p className="footer-credit">Desarrollada por <strong>Mario Dev</strong></p>
     <div className="footer-backup">

@@ -1,6 +1,7 @@
 import { PinField } from '../components/PinField'
 import { UsernameField } from '../components/UsernameField'
 import { RecoveryForm } from '../components/RecoveryForm'
+import { AppFooter } from '../components/AppFooter'
 import { useState, type FormEvent } from 'react'
 import { useAuthAction } from '../auth/useAuthAction'
 import { AuthFeedback } from '../components/AuthFeedback'
@@ -44,6 +45,7 @@ export function AuthPage({ configured, message, onAuthenticated, onConfigured }:
           <p>Accede a tu espacio de administración desde este equipo.</p>
         </div>
         <div className="local-badge"><span className="status-dot ready" />{recovering ? 'Recuperación por correo · Requiere internet' : 'Acceso local · Sin internet'}</div>
+        <AppFooter className="login-footer" />
       </section>
       <section className="access-card">
         {recovering ? <RecoveryForm onBack={(notice) => { setRecovering(false); setRecoveryMessage(notice || '') }} /> : <>
