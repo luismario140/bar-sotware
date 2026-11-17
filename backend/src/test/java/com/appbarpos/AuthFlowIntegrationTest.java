@@ -116,10 +116,10 @@ class AuthFlowIntegrationTest {
     }
 
     private String credentials(String username, String pin) {
-        return "{\"username\":\"" + username + "\",\"pin\":\"" + pin + "\"}";
+        return "{\"username\":\"" + username + "\",\"pin\":\"" + pin + "\",\"recoveryEmail\":\"admin@example.com\"}";
     }
 
     private String change(String currentPin, String username, String pin) {
-        return "{\"currentPin\":\"" + currentPin + "\",\"username\":\"" + username + "\",\"pin\":\"" + pin + "\"}";
+        return "{\"currentPin\":\"" + currentPin + "\",\"username\":\"" + username + "\",\"pin\":\"" + pin + "\",\"recoveryEmail\":\"admin@example.com\"}";
     }
 }

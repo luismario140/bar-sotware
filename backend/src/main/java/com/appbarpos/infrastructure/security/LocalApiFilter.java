@@ -19,7 +19,7 @@ public class LocalApiFilter extends OncePerRequestFilter {
     private final byte[] token;
     private final AuthSessions sessions;
     private static final Set<String> OPEN_SESSION_PATHS = Set.of("/api/auth/session", "/api/auth/setup",
-            "/api/auth/login", "/api/auth/logout", "/api/system/shutdown");
+            "/api/auth/login", "/api/auth/logout", "/api/auth/recovery-request", "/api/auth/recovery-reset", "/api/system/shutdown");
 
     public LocalApiFilter(AuthSessions sessions, @Value("${appbarpos.api-token:}") String configured) {
         this.sessions = sessions;

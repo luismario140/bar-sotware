@@ -1,5 +1,6 @@
 import { PinField } from '../components/PinField'
 import { UsernameField } from '../components/UsernameField'
+import { RecoveryForm } from '../components/RecoveryForm'
 import { useState, type FormEvent } from 'react'
 import { useAuthAction } from '../auth/useAuthAction'
 import { AuthFeedback } from '../components/AuthFeedback'
@@ -12,6 +13,9 @@ export function AuthPage({ configured, message, onAuthenticated, onConfigured }:
   const [pin, setPin] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [visible, setVisible] = useState(false)
+  const [recoveryEmail, setRecoveryEmail] = useState('')
+  const [recovering, setRecovering] = useState(false)
+  const [recoveryMessage, setRecoveryMessage] = useState('')
   const action = useAuthAction()
 
   function submit(event: FormEvent) {
@@ -19,7 +23,7 @@ export function AuthPage({ configured, message, onAuthenticated, onConfigured }:
     if (!configured && pin !== confirmation) { action.setError('Los PIN no coinciden.'); return }
     void action.run(async () => {
       try {
-        const state = await authRequest<AuthState>(configured ? 'login' : 'setup', { username, pin })
+        const state = await authRequest<AuthState>(configured ? 'login' : 'setup', configured ? { username, pin } : { username, pin, recoveryEmail })
         onAuthenticated(state)
       } catch (failure) {
         if (failure instanceof AuthError && failure.code === 'ALREADY_CONFIGURED') { onConfigured(); return }
@@ -39,16 +43,23 @@ export function AuthPage({ configured, message, onAuthenticated, onConfigured }:
           <h1>Un lugar para<br />organizar tu negocio.</h1>
           <p>Accede a tu espacio de administración desde este equipo.</p>
         </div>
-        <div className="local-badge"><span className="status-dot ready" />Acceso local · Sin internet</div>
+        <div className="local-badge"><span className="status-dot ready" />{recovering ? 'Recuperación por correo · Requiere internet' : 'Acceso local · Sin internet'}</div>
       </section>
       <section className="access-card">
+        {recovering ? <RecoveryForm onBack={(notice) => { setRecovering(false); setRecoveryMessage(notice || '') }} /> : <>
         <p className="eyebrow">{configured ? 'ACCESO ADMINISTRATIVO' : 'PRIMER USO'}</p>
         <h2>{configured ? 'Bienvenido de nuevo' : 'Configura tu acceso'}</h2>
         <p className="form-description">{configured ? 'Introduce tu usuario y PIN para continuar.' : 'Elige el usuario y el PIN del único administrador de tu bar.'}</p>
         {message && <p className="form-success" role="status">{message}</p>}
+        {recoveryMessage && <p className="form-success" role="status">{recoveryMessage}</p>}
         <form onSubmit={submit} className="access-form">
           <label htmlFor="access-username">Usuario</label>
           <UsernameField id="access-username" value={username} onChange={setUsername} disabled={action.busy} autoFocus />
+          {!configured && <>
+            <label htmlFor="access-email">Correo de recuperación</label>
+            <input id="access-email" name="recoveryEmail" type="email" autoComplete="email" required maxLength={254} value={recoveryEmail} onChange={(event) => setRecoveryEmail(event.target.value)} disabled={action.busy} placeholder="nombre@correo.com" aria-describedby="email-help" />
+            <p id="email-help" className="field-help">Usa un correo al que tengas acceso. Allí recibirás los códigos si olvidas tu PIN.</p>
+          </>}
           <label htmlFor="access-pin">PIN</label>
           <PinField id="access-pin" name="pin" visible={visible} autoComplete={configured ? 'current-password' : 'new-password'} value={pin} onChange={setPin} disabled={action.busy} describedBy="pin-help" />
           <p id="pin-help" className="field-help">Usa tu PIN de 4 dígitos. Los ceros al inicio se conservan.</p>
@@ -60,7 +71,9 @@ export function AuthPage({ configured, message, onAuthenticated, onConfigured }:
           <AuthFeedback error={action.error} remaining={action.remaining} />
           <button type="submit" className="primary-button" disabled={action.busy || action.remaining > 0}>{action.busy ? 'Validando…' : configured ? 'Iniciar sesión' : 'Crear administrador y entrar'}</button>
         </form>
+        {configured && <button id="recover-access" type="button" className="text-button recover-access" disabled={action.busy} onClick={() => { setRecovering(true); setPin(''); action.setError('') }}>¿Olvidaste tu PIN? Recuperar acceso</button>}
         <p className="access-footer">Tus datos permanecen guardados en este equipo.</p>
+        </>}
       </section>
     </main>
   )

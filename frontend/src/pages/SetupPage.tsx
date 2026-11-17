@@ -7,8 +7,8 @@ import { AppFooter } from '../components/AppFooter'
 import { ProductsPage } from './ProductsPage'
 import { SalesPage } from './SalesPage'
 
-export function SetupPage({ username, onLogout, onCredentialsChanged }: {
-  username: string; onLogout: () => Promise<void>; onCredentialsChanged: () => void
+export function SetupPage({ username, recoveryEmail, onLogout, onCredentialsChanged }: {
+  username: string; recoveryEmail: string | null; onLogout: () => Promise<void>; onCredentialsChanged: () => void
 }) {
   const [section, setSection] = useState<'products' | 'sales' | 'security' | 'system'>('products')
   const [saleBusy, setSaleBusy] = useState(false)
@@ -62,7 +62,7 @@ export function SetupPage({ username, onLogout, onCredentialsChanged }: {
           <div><p className="eyebrow">APPBARPOS / ADMINISTRACIÓN</p><h1>{section === 'products' ? 'Inventario' : section === 'sales' ? 'Registrar venta' : section === 'security' ? 'Acceso y seguridad' : 'Estado del sistema'}</h1></div>
         </header>
         <div className={`page-content ${section === 'sales' ? 'page-content-sales' : section === 'products' ? 'page-content-inventory' : ''}`}>
-        {section === 'products' ? <ProductsPage /> : section === 'sales' ? null : section === 'security' ? <CredentialsForm username={username} onChanged={onCredentialsChanged} /> : <>
+        {section === 'products' ? <ProductsPage /> : section === 'sales' ? null : section === 'security' ? <CredentialsForm username={username} recoveryEmail={recoveryEmail} onChanged={onCredentialsChanged} /> : <>
         <section className="welcome">
           <p className="eyebrow">UN PUNTO DE PARTIDA PARA TU BAR</p>
           <h2>Todo comienza con una base sólida.</h2>

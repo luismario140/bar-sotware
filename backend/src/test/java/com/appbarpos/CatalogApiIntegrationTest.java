@@ -43,7 +43,7 @@ class CatalogApiIntegrationTest {
     void catalogAndImagesRequireSessionAndReturnConsistentData() throws Exception {
         try (var client = HttpClient.newBuilder().cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL)).build()) {
             assertThat(send(client, "GET", "/api/products", null).statusCode()).isEqualTo(401);
-            var setup = send(client, "POST", "/api/auth/setup", "{\"username\":\"catalog-api-test\",\"pin\":\"0012\"}");
+            var setup = send(client, "POST", "/api/auth/setup", "{\"username\":\"catalog-api-test\",\"pin\":\"0012\",\"recoveryEmail\":\"admin@example.com\"}");
             assertThat(setup.statusCode()).isEqualTo(201);
             assertThat(send(client, "GET", "/api/products", null).body()).isEqualTo("[]");
             var command = new ProductCommands.Save(UUID.randomUUID().toString(), null, "Mi producto", "Cervezas", true, "5000,50", null, CatalogServiceTest.png(8, 8), false);

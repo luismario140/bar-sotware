@@ -162,12 +162,16 @@ $env:APPBARPOS_DATA_DIR = Join-Path $env:TEMP 'AppBarPOS-desarrollo'
 
 No hay usuarios ni PIN precargados. El primer administrador elige su acceso en la
 aplicación; el PIN se guarda con hash PBKDF2, sal y prefijo de algoritmo. Se aceptan
-4 dígitos, incluidos ceros iniciales. El nombre distingue mayúsculas/minúsculas.
+únicamente PIN de 4 dígitos, incluidos ceros iniciales, tanto en los formularios
+como en el backend. El nombre distingue mayúsculas/minúsculas.
 Cinco fallos bloquean nuevos intentos durante un minuto, incluso al reiniciar.
 La sesión expira tras 30 minutos sin solicitudes autenticadas y al reiniciar el backend.
 En «Acceso y seguridad», cambiar credenciales requiere el PIN actual y confirmación;
 después exige iniciar sesión de nuevo y revoca las demás sesiones. Los datos se conservan.
-La recuperación por correo todavía no está implementada y no existe un PIN maestro.
+La recuperación por correo permite restablecer el PIN con un código temporal de un
+solo uso. El correo se registra al crear el administrador o desde «Acceso y seguridad».
+El envío necesita internet y una cuenta emisora configurada; consulta
+[la guía de configuración de Gmail](docs/recuperacion-acceso.md). No existe un PIN maestro.
 No se guarda el PIN temporal documentado en SQL, configuración o código de producción.
 
 ## Productos e inventario

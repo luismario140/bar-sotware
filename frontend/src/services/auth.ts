@@ -2,8 +2,9 @@ export interface AuthState {
   configured: boolean
   authenticated: boolean
   username: string | null
+  recoveryEmail?: string | null
 }
-export type AuthOperation = 'session' | 'setup' | 'login' | 'logout' | 'credentials'
+export type AuthOperation = 'session' | 'setup' | 'login' | 'logout' | 'credentials' | 'recovery-request' | 'recovery-reset'
 export interface ApiReply { ok: boolean; status: number; body: unknown }
 export class AuthError extends Error {
   constructor(public code: string, message: string, public retryAfterSeconds = 0) { super(message) }
@@ -22,7 +23,7 @@ export async function authRequest<T>(operation: AuthOperation, payload?: Record<
         body: payload ? JSON.stringify(payload) : undefined,
         signal: AbortSignal.timeout(15000),
       })
-      reply = { ok: response.ok, status: response.status, body: response.status === 204 ? null : await response.json() }
+      reply = { ok: response.ok, status: response.status, body: response.status === 204 || response.status === 202 ? null : await response.json() }
     }
   } catch {
     throw new AuthError('CONNECTION', 'No se pudo conectar con el servicio local. Verifica la conexión y vuelve a intentarlo.')

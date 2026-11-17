@@ -36,14 +36,15 @@ public class AuthService {
         dummyHash = encoder.encode(java.util.UUID.randomUUID().toString());
     }
 
-    public synchronized Administrator setup(String username, String pin) {
+    public synchronized Administrator setup(String username, String pin, String recoveryEmail) {
         String normalized = validate(username, pin);
+        String email = RecoveryEmail.normalize(recoveryEmail);
         return transaction.execute(status -> {
             if (repository.find().isPresent()) {
                 throw new AuthException(HttpStatus.CONFLICT, "ALREADY_CONFIGURED", "El administrador ya está configurado.");
             }
             long now = clock.millis();
-            repository.create(normalized, encoder.encode(pin), now);
+            repository.create(normalized, encoder.encode(pin), email, now);
             repository.audit("SETUP", now, null, normalized);
             return repository.find().orElseThrow();
         });
@@ -65,8 +66,9 @@ public class AuthService {
         return result(outcome);
     }
 
-    public synchronized void change(long credentialVersion, String currentPin, String username, String pin) {
+    public synchronized void change(long credentialVersion, String currentPin, String username, String pin, String recoveryEmail) {
         String normalized = validate(username, pin);
+        String email = RecoveryEmail.normalize(recoveryEmail);
         if (currentPin == null || !currentPin.matches("[0-9]{4}")) {
             throw new AuthException(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "Introduce el PIN actual de 4 dígitos.");
         }
@@ -75,7 +77,7 @@ public class AuthService {
             if (admin.credentialVersion() != credentialVersion) throw unauthenticated();
             AuthException failure = verify(admin, admin.username(), currentPin);
             if (failure != null) return new Outcome(null, failure);
-            repository.change(normalized, encoder.encode(pin), clock.millis());
+            repository.change(normalized, encoder.encode(pin), email, clock.millis());
             repository.audit("CREDENTIALS_CHANGED", clock.millis(), admin.username(), normalized);
             return new Outcome(repository.find().orElseThrow(), null);
         });

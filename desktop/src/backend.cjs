@@ -82,7 +82,7 @@ async function startBackend({ packaged, resourcesPath, dataDirectory }) {
     for (const cookie of response.headers.getSetCookie()) {
       if (cookie.startsWith('APPBARPOS_SESSION=')) sessionCookie = cookie.split(';')[0]
     }
-    const body = response.status === 204 ? null : image && response.ok
+    const body = response.status === 204 || response.status === 202 ? null : image && response.ok
       ? 'data:image/png;base64,' + Buffer.from(await response.arrayBuffer()).toString('base64')
       : await response.json()
     return { ok: response.ok, status: response.status, body }
@@ -98,10 +98,11 @@ async function startBackend({ packaged, resourcesPath, dataDirectory }) {
       const paths = {
         session: '/api/auth/session', setup: '/api/auth/setup', login: '/api/auth/login',
         logout: '/api/auth/logout', credentials: '/api/auth/credentials',
+        'recovery-request': '/api/auth/recovery-request', 'recovery-reset': '/api/auth/recovery-reset',
       }
       if (!Object.hasOwn(paths, operation)) throw new Error('Operación no permitida.')
       const response = await request(paths[operation], operation === 'session' ? 'GET' : 'POST', payload)
-      if (response.ok && (operation === 'logout' || operation === 'credentials')) sessionCookie = ''
+      if (response.ok && (operation === 'logout' || operation === 'credentials' || operation === 'recovery-reset')) sessionCookie = ''
       return response
     },
     async catalog(operation, payload) {

@@ -27,7 +27,7 @@ export default function App() {
     onAuthenticated={(next) => { setMessage(''); setState(next) }}
     onConfigured={() => { setMessage('El administrador ya está configurado. Inicia sesión para continuar.'); setState({ configured: true, authenticated: false, username: null }) }} />
 
-  return <SetupPage username={state.username!} onLogout={async () => {
+  return <SetupPage username={state.username!} recoveryEmail={state.recoveryEmail ?? null} onLogout={async () => {
     await authRequest<void>('logout')
     setMessage('Sesión cerrada.')
     setState({ configured: true, authenticated: false, username: null })
