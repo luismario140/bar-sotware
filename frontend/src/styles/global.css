@@ -62,7 +62,7 @@ h1 { font-size: 29px; letter-spacing: -.7px; margin: 0; font-weight: 600; }
 .technical-panel p { color: var(--color-text-muted); font-size: 13px; margin: 0; }
 button { color: var(--color-text); background: var(--color-surface-raised); border: none; padding: 11px 17px; border-radius: 7px; font-weight: 600; cursor: pointer; }
 button:hover { background: var(--color-surface-hover); }
-button:disabled { opacity: .6; cursor: wait; }
+button:disabled { opacity: .6; cursor: not-allowed; }
 a:focus-visible, button:focus-visible { outline: 2px solid var(--color-accent-readable); outline-offset: 4px; }
 .technical-panel .message { flex-basis: 100%; color: var(--color-available); }
 .technical-panel .error { color: var(--color-danger); }
