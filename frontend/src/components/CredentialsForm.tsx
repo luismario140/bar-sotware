@@ -1,3 +1,4 @@
+import { displayName } from '../catalog/names'
 import { useState, type FormEvent } from 'react'
 import { useAuthAction } from '../auth/useAuthAction'
 import { authRequest } from '../services/auth'
@@ -47,7 +48,7 @@ export function CredentialsForm({ username: original, onChanged }: { username: s
       <AuthFeedback error={action.error} remaining={action.remaining} />
       {!confirming ? <button type="submit" disabled={action.busy || action.remaining > 0}>Guardar cambios</button> :
         <div className="confirm-panel" role="group" aria-label="Confirmar cambio de credenciales">
-          <p>Actualizarás el acceso del usuario <strong>{username.trim()}</strong>. Al confirmar se cerrará la sesión.</p>
+          <p>Actualizarás el acceso del usuario <strong>{displayName(username.trim())}</strong>. Al confirmar se cerrará la sesión.</p>
           <div className="button-row"><button id="confirm-credentials" type="button" onClick={save} disabled={action.busy}>{action.busy ? 'Guardando…' : 'Confirmar cambios'}</button>
             <button type="button" className="secondary-button" onClick={() => setConfirming(false)} disabled={action.busy}>Cancelar</button></div>
         </div>}

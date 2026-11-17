@@ -1,3 +1,4 @@
+import { displayName } from './names'
 import { useState, type FormEvent } from 'react'
 import { Modal } from '../components/Modal'
 import { catalogRequest, type Product } from '../services/catalog'
@@ -22,7 +23,7 @@ export function RestockEditor({ product, onClose, onSaved }: { product: Product;
   }
 
   return <Modal title="Agregar existencias" busy={busy} onClose={onClose}>
-    <p><strong>{product.name}</strong>{packageLabel(product) && <> · {packageLabel(product)}</>}</p>
+    <p><strong>{displayName(product.name)}</strong>{packageLabel(product) && <> · {packageLabel(product)}</>}</p>
     <p className="form-description">Disponibles: {product.quantityRemaining.toLocaleString('es-CO')} unidades. La nueva mercancía se sumará a esta cantidad.</p>
     <form className="access-form" onSubmit={submit}>
       <label htmlFor="restock-quantity">Unidades recibidas</label>
