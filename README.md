@@ -1,5 +1,7 @@
 # AppBarPOS
 
+Flujo de trabajo con ramas: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 POS de escritorio para Windows 10/11 x64 en desarrollo por etapas. Incluye acceso del
 administrador e inventario en tabla por categorías, precios por unidad/shot y
 ventas por unidades completas con actualización automática de existencias y reposición.
@@ -173,6 +175,9 @@ energizantes y Bebidas preparadas mezclas, en ese orden. Las categorías aparece
 vacías y cada una tiene «Agregar producto» con la categoría preseleccionada.
 Los productos antiguos con categorías diferentes aparecen en «Por clasificar» hasta
 que se editen; no se reclasifican ni se eliminan automáticamente.
+En escritorio, al desplegar las categorías se desplaza únicamente la lista de
+inventario: el título, los filtros y el panel lateral permanecen visibles. Las tablas
+anchas tienen desplazamiento horizontal propio para no ensanchar la página.
 
 En Rones y Aguardientes se exige presentación: Media (375 ml), Botella (750 ml) o Litro
 (1000 ml). El contenido se puede ajustar según la etiqueta. Crear un producto por
@@ -188,9 +193,26 @@ la cantidad vendida es de solo lectura. «Agregar existencias» suma unidades nu
 sobre las disponibles sin modificar lo vendido. Ambos cambios se guardan en SQLite.
 
 La sección «Registrar venta», en el menú lateral, muestra tarjetas pequeñas agrupadas
-por categoría, filtros y búsqueda. Cada clic agrega una unidad al comprobante situado
+por categoría y filtros mediante botones. Cada clic agrega una unidad al comprobante situado
 a la derecha; se pueden modificar cantidades o quitar productos y el total se actualiza
 al instante. El borrador se conserva al cambiar de sección durante la sesión.
+Las tarjetas descuentan de las unidades disponibles las que ya están en la cuenta.
+Al seleccionar todas, la tarjeta se deshabilita y muestra «Todo en esta cuenta»;
+si no quedan existencias, muestra «Agotado». En ambos casos se atenúa y se oculta
+el signo de agregar. Quitar unidades de la cuenta o reponer stock vuelve a habilitarla.
+Las existencias entre 1 y 14 unidades se muestran en amarillo como alerta de stock
+bajo en inventario y en las tarjetas de venta. Con 15 o más unidades se muestran normalmente.
+En escritorio, el panel lateral, el título de la sección y el comprobante permanecen
+visibles mientras se recorre el catálogo. Si el comprobante contiene muchos productos,
+su lista se desplaza por separado y mantiene visibles el total y los botones de venta.
+El panel lateral muestra el administrador bajo AppBarPOS, el botón para cerrar sesión
+y un pie breve con el crédito del desarrollador.
+Al completar una venta, el comprobante se vacía automáticamente y queda listo para
+la siguiente, sin pulsar un botón adicional. La venta guardada se puede consultar en
+«Ventas guardadas». Para vender no hace falta buscar productos con el teclado.
+La confirmación de guardado desaparece a los tres segundos. El comprobante usa un
+formato de ticket de papel y ocupa toda la altura disponible junto al catálogo;
+el icono de recarga permite actualizar productos o ventas guardadas.
 «Completar venta»
 calcula el total en el servidor, descuenta existencias y aumenta las cantidades vendidas
 en una sola transacción. Cancelar no modifica nada. Se rechazan cantidades fraccionarias,
@@ -200,11 +222,37 @@ precios, productos, administrador y saldos antes/después de cada movimiento.
 Estas ventas son por presentaciones completas y requieren precio por unidad. La conversión
 de shots a ml y las recetas de cócteles siguen pendientes; el precio por shot se conserva.
 
-«Ventas guardadas» permite consultar los registros persistidos, en páginas de 20 ventas,
+El recibo exige escoger «Efectivo» o «Transferencia» y permite indicar cuenta «Abierta»
+o «Cerrada», además de un nombre opcional de hasta 80 caracteres. «Guardar cuenta abierta»
+conserva la cuenta en SQLite y reserva sus unidades sin contarlas como vendidas ni cobradas.
+Desde «Cuentas abiertas» se puede retomar, agregar o quitar productos y volver a guardarla.
+Los productos ya reservados conservan el precio con el que se agregaron; los productos
+nuevos usan el precio actual. No se permite eliminar del inventario un producto reservado.
+Al escoger «Cerrada» y completar la venta se cobra la cuenta y se cuentan sus productos
+vendidos, sin descontar las reservas otra vez. Descartar cambios de una cuenta retomada
+conserva su última versión guardada. El nombre puede quedar vacío tanto al abrir como al cerrar.
+«Anular» en la lista de cuentas abiertas, o «Anular cuenta» al retomarla, pide confirmación
+y devuelve sus reservas al inventario sin registrar ventas ni modificar las cantidades
+vendidas. Se conserva la cuenta, quién la anuló, la fecha y las unidades devueltas.
+«Anuladas» muestra las últimas 20 anulaciones. Volver de la confirmación conserva la cuenta;
+al confirmar se descartan sus cambios sin guardar y se devuelven solo las reservas guardadas.
+Reintentar no devuelve stock dos veces. Las cuentas ya cobradas no se anulan desde esta opción.
+
+Los nombres de productos y de usuario se muestran con la inicial de cada palabra en
+mayúscula, por ejemplo «Aguardiente Antioqueño», sin cambiar las credenciales guardadas.
+
+«Ventas guardadas» muestra las últimas 20 ventas en hasta 5 páginas de 4 ventas,
 con fecha, productos, cantidades, precios y total. Las ventas conservan los precios y nombres
 del momento de la compra aunque después se edite o elimine el producto. En Inventario,
 «Editar precio» abre el formulario de edición; al regresar a Registrar venta se actualizan
-los precios y existencias del borrador antes de confirmarlo.
+los precios y existencias del borrador antes de confirmarlo. «Exportar Excel» descarga
+un archivo .xlsx con todas las ventas, incluidas las anteriores a las 20 visibles.
+Contiene las hojas «Ventas» (una fila por venta con fecha y total) y «Detalle»
+(productos, presentaciones, cantidades y precios históricos). La exportación no elimina
+registros de SQLite y funciona sin conexión a Internet ni tener Excel instalado.
+La hoja «Ventas» incluye método de pago, estado cerrado, nombre opcional y referencia
+a la cuenta original. Las cuentas abiertas se consultan por separado y no se suman a ventas
+pagadas. Los recibos anteriores sin método de pago muestran «No registrado».
 
 La interfaz no muestra imágenes ni controles de activo/inactivo. Los datos e imágenes
 anteriores se conservan para compatibilidad y respaldo. Los cambios guardan quién los
@@ -226,8 +274,9 @@ Flyway aplica database/migrations al arrancar y conserva versiones y checksums e
 flyway_schema_history. V1 crea app_metadata; V2 añade administrator y administrator_audit;
 V3 añade product, sale_presentation y product_operation; V4 añade las cantidades de inventario;
 V5 registra la eliminación de productos sin borrar su historial; V6 añade presentaciones,
-volúmenes, ventas y movimientos de inventario.
-No editar migraciones aplicadas: añadir V7__descripcion.sql, etc. No se utiliza ddl-auto
+volúmenes, ventas y movimientos de inventario; V7 añade cuentas abiertas y sus operaciones;
+V8 conserva las anulaciones de cuentas y la devolución de sus reservas.
+No editar migraciones aplicadas: añadir V9__descripcion.sql, etc. No se utiliza ddl-auto
 y Flyway clean está deshabilitado. Si una base existente necesita migración, se genera
 antes un ZIP con una copia SQLite consistente, medios y manifiesto SHA-256; si falla,
 el arranque se detiene antes de migrar. La interfaz de restauración sigue pendiente.
