@@ -70,8 +70,9 @@ public class ProductRepository {
         return jdbc.query("SELECT request_hash, result_json FROM product_operation WHERE id = ? UNION ALL SELECT request_hash, result_json FROM product_deletion WHERE operation_id = ? " +
                         "UNION ALL SELECT request_hash, result_json FROM inventory_movement WHERE operation_id = ? AND kind = 'RESTOCK' " +
                         "UNION ALL SELECT request_hash, result_json FROM inventory_sale WHERE operation_id = ? " +
-                        "UNION ALL SELECT request_hash, result_json FROM account_operation WHERE operation_id = ?",
-                (rs, row) -> new Operation(rs.getString(1), rs.getString(2)), id, id, id, id, id).stream().findFirst();
+                        "UNION ALL SELECT request_hash, result_json FROM account_operation WHERE operation_id = ? " +
+                        "UNION ALL SELECT request_hash, result_json FROM account_cancellation WHERE operation_id = ?",
+                (rs, row) -> new Operation(rs.getString(1), rs.getString(2)), id, id, id, id, id, id).stream().findFirst();
     }
 
     public void sale(String operation, long administrator, String hash, long total, String result, long now) {
@@ -103,6 +104,15 @@ public class ProductRepository {
     public void closeAccount(String id, int version, String sale, long now) {
         int changed = jdbc.update("UPDATE customer_account SET status = 'CLOSED', version = version + 1, updated_at = ?, closed_sale_id = ? WHERE id = ? AND version = ? AND status = 'OPEN'", now, sale, id, version);
         if (changed != 1) throw com.appbarpos.catalog.application.CatalogException.invalid("La cuenta cambió. Vuelve a abrirla.");
+    }
+
+    public List<String> cancellations() {
+        return jdbc.query("SELECT result_json FROM account_cancellation ORDER BY occurred_at DESC, operation_id DESC LIMIT 20", (rs, row) -> rs.getString(1));
+    }
+
+    public void cancelAccount(String id, int version, String operation, long administrator, String hash, String result, long now) {
+        closeAccount(id, version, null, now);
+        jdbc.update("INSERT INTO account_cancellation VALUES (?, ?, ?, ?, ?, ?)", operation, id, administrator, hash, result, now);
     }
 
     public void movement(String operation, String product, String sale, long administrator, String kind, long quantity,

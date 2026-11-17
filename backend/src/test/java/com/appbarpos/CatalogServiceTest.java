@@ -53,6 +53,49 @@ class CatalogServiceTest {
     }
 
     @Test
+    void cancellingAnOpenAccountReleasesReservationsOnceAndKeepsAnImmutableAudit() throws Exception {
+        var product = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
+                "Cerveza", "Cervezas", true, "6000", null, null, false, 2L, 10L), 1);
+        var account = service.saveAccount(new ProductCommands.SaveAccount(UUID.randomUUID().toString(), null, null, "EFECTIVO", "Amigos", java.util.List.of(
+                new ProductCommands.SaleLine(product.id(), product.version(), new java.math.BigDecimal("3")))), 1);
+        assertThat(service.find(product.id()).quantityRemaining()).isEqualTo(7);
+        assertThatThrownBy(() -> service.cancelAccount(new ProductCommands.CancelAccount(UUID.randomUUID().toString(), account.id(), 0), 1)).isInstanceOf(CatalogException.class);
+        var command = new ProductCommands.CancelAccount(UUID.randomUUID().toString(), account.id(), account.version());
+        jdbc.execute("CREATE TRIGGER fail_cancel BEFORE INSERT ON account_cancellation BEGIN SELECT RAISE(ABORT, 'controlled failure'); END");
+        assertThatThrownBy(() -> service.cancelAccount(command, 1)).isInstanceOf(org.springframework.dao.DataAccessException.class);
+        assertThat(service.find(product.id()).quantityRemaining()).isEqualTo(7);
+        assertThat(service.accounts()).containsExactly(account);
+        jdbc.execute("DROP TRIGGER fail_cancel");
+        var cancellation = service.cancelAccount(command, 1);
+        assertThat(service.cancelAccount(command, 1)).isEqualTo(cancellation);
+        assertThat(service.find(product.id()).quantityRemaining()).isEqualTo(10);
+        assertThat(service.find(product.id()).quantitySold()).isEqualTo(2);
+        assertThat(service.accounts()).isEmpty();
+        assertThat(service.sales(0).sales()).isEmpty();
+        assertThat(service.cancellations()).containsExactly(cancellation);
+        assertThat(cancellation.account()).isEqualTo(account);
+        assertThat(cancellation.administratorId()).isEqualTo(1);
+        assertThatThrownBy(() -> service.cancelAccount(new ProductCommands.CancelAccount(UUID.randomUUID().toString(), account.id(), account.version()), 1)).isInstanceOf(CatalogException.class);
+        assertThatThrownBy(() -> service.checkout(new ProductCommands.Checkout(UUID.randomUUID().toString(), java.util.List.of(
+                new ProductCommands.SaleLine(product.id(), service.find(product.id()).version(), java.math.BigDecimal.ONE)), "EFECTIVO", null, account.id(), account.version()), 1)).isInstanceOf(CatalogException.class);
+        assertThatThrownBy(() -> jdbc.update("DELETE FROM account_cancellation")).isInstanceOf(org.springframework.dao.DataAccessException.class);
+        assertThatThrownBy(() -> jdbc.update("UPDATE account_cancellation SET occurred_at = 0")).isInstanceOf(org.springframework.dao.DataAccessException.class);
+    }
+
+    @Test
+    void aPaidAccountCannotBeCancelled() throws Exception {
+        var product = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
+                "Cerveza", "Cervezas", true, "6000", null, null, false, 0L, 10L), 1);
+        var account = service.saveAccount(new ProductCommands.SaveAccount(UUID.randomUUID().toString(), null, null, "EFECTIVO", null,
+                java.util.List.of(new ProductCommands.SaleLine(product.id(), product.version(), java.math.BigDecimal.ONE))), 1);
+        var sale = service.checkout(new ProductCommands.Checkout(UUID.randomUUID().toString(), java.util.List.of(
+                new ProductCommands.SaleLine(product.id(), service.find(product.id()).version(), java.math.BigDecimal.ONE)), "EFECTIVO", null, account.id(), account.version()), 1);
+        assertThatThrownBy(() -> service.cancelAccount(new ProductCommands.CancelAccount(UUID.randomUUID().toString(), account.id(), account.version()), 1)).isInstanceOf(CatalogException.class);
+        assertThat(service.sales(0).sales()).containsExactly(sale);
+        assertThat(service.find(product.id()).quantityRemaining()).isEqualTo(9);
+    }
+
+    @Test
     void openAccountsReserveStockCanBeResumedAndAreChargedOnlyOnce() throws Exception {
         var product = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
                 "Cerveza", "Cervezas", true, "6000", null, null, false, 0L, 10L), 1);

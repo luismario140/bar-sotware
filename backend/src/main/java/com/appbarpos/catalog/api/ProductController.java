@@ -51,6 +51,12 @@ public class ProductController {
     public com.appbarpos.catalog.domain.OpenAccount saveAccount(@RequestBody ProductCommands.SaveAccount input, HttpServletRequest request) {
         return service.saveAccount(input, sessions.require(request).id());
     }
+    @GetMapping("/accounts/cancellations")
+    public List<com.appbarpos.catalog.domain.AccountCancellation> cancellations() { return service.cancellations(); }
+    @PostMapping("/accounts/cancel")
+    public com.appbarpos.catalog.domain.AccountCancellation cancelAccount(@RequestBody ProductCommands.CancelAccount input, HttpServletRequest request) {
+        return service.cancelAccount(input, sessions.require(request).id());
+    }
     @GetMapping("/{id}/image")
     public ResponseEntity<byte[]> image(@PathVariable String id) throws java.io.IOException {
         return ResponseEntity.ok().header("Cache-Control", "no-store").header("X-Content-Type-Options", "nosniff")

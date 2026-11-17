@@ -30,4 +30,5 @@ public final class ProductCommands {
     }
     public record SaveAccount(String operationId, String accountId, Integer expectedVersion,
                               String paymentMethod, String name, java.util.List<SaleLine> lines) { }
+    public record CancelAccount(String operationId, String accountId, Integer expectedVersion) { }
 }

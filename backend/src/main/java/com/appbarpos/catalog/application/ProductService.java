@@ -6,6 +6,7 @@ import com.appbarpos.catalog.domain.CatalogCategories;
 import com.appbarpos.catalog.domain.SaleReceipt;
 import com.appbarpos.catalog.domain.SalesHistory;
 import com.appbarpos.catalog.domain.OpenAccount;
+import com.appbarpos.catalog.domain.AccountCancellation;
 import com.appbarpos.catalog.infrastructure.ProductImages;
 import com.appbarpos.catalog.repository.ProductRepository;
 import java.math.BigDecimal;
@@ -41,6 +42,31 @@ public class ProductService {
     public List<Product> list() { return repository.list(); }
     public List<OpenAccount> accounts() {
         return repository.accounts().stream().map(value -> json.readValue(value, OpenAccount.class)).toList();
+    }
+
+    public List<AccountCancellation> cancellations() {
+        return repository.cancellations().stream().map(value -> json.readValue(value, AccountCancellation.class)).toList();
+    }
+
+    public synchronized AccountCancellation cancelAccount(ProductCommands.CancelAccount input, long administrator) {
+        uuid(input.operationId()); uuid(input.accountId());
+        String hash = hash(json.writeValueAsString(List.of("CANCEL_ACCOUNT", input, administrator)));
+        return transaction.execute(status -> {
+            AccountCancellation previousResult = replay(input.operationId(), hash, AccountCancellation.class);
+            if (previousResult != null) return previousResult;
+            var account = account(input.accountId(), input.expectedVersion());
+            var released = new ArrayList<Product>();
+            long now = clock.millis();
+            for (var line : account.lines()) {
+                Product before = find(line.product().id());
+                Product after = withStock(before, before.quantitySold(), addQuantity(before.quantityRemaining(), line.quantity()));
+                repository.save(after, false, now);
+                released.add(after);
+            }
+            var result = new AccountCancellation(input.operationId(), account, administrator, now, List.copyOf(released));
+            repository.cancelAccount(account.id(), account.version(), input.operationId(), administrator, hash, json.writeValueAsString(result), now);
+            return result;
+        });
     }
 
     private OpenAccount account(String id, Integer expectedVersion) {
