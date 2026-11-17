@@ -8,10 +8,18 @@ export interface Product {
 }
 export interface SaleReceipt {
   id: string; totalMinor: number; occurredAt: number
+  paymentMethod?: 'EFECTIVO' | 'TRANSFERENCIA' | null; accountName?: string | null; accountId?: string | null
   lines: { product: Product; quantity: number; unitPriceMinor: number; subtotalMinor: number }[]
 }
+export interface OpenAccount {
+  id: string; version: number; paymentMethod: 'EFECTIVO' | 'TRANSFERENCIA'; name: string | null
+  totalMinor: number; lines: SaleReceipt['lines']; createdAt: number; updatedAt: number
+}
+export interface AccountCancellation {
+  id: string; account: OpenAccount; administratorId: number; occurredAt: number; releasedProducts: Product[]
+}
 export interface SalesHistory { sales: SaleReceipt[]; page: number; hasNext: boolean }
-export type CatalogOperation = 'list' | 'create' | 'update' | 'status' | 'image' | 'delete' | 'restock' | 'checkout' | 'sales'
+export type CatalogOperation = 'list' | 'create' | 'update' | 'status' | 'image' | 'delete' | 'restock' | 'checkout' | 'sales' | 'accounts' | 'saveAccount' | 'cancelAccount' | 'cancelledAccounts'
 export interface ProductInput {
   operationId: string; expectedVersion: number | null; name: string; category: string
   active: boolean; unitPrice: string | null; shotPrice: string | null
@@ -26,9 +34,9 @@ export async function catalogRequest<T>(operation: CatalogOperation, payload?: R
     if (window.appbarpos) reply = await window.appbarpos.catalog(operation, payload)
     else {
       const { id, ...body } = payload || {}
-      const relative = operation === 'sales' ? `/api/products/sales?page=${encodeURIComponent(String(body.page ?? 0))}` : operation === 'checkout' ? '/api/products/sales' : operation === 'list' || operation === 'create' ? '/api/products'
+      const relative = operation === 'cancelAccount' ? '/api/products/accounts/cancel' : operation === 'cancelledAccounts' ? '/api/products/accounts/cancellations' : operation === 'accounts' || operation === 'saveAccount' ? '/api/products/accounts' : operation === 'sales' ? `/api/products/sales?page=${encodeURIComponent(String(body.page ?? 0))}` : operation === 'checkout' ? '/api/products/sales' : operation === 'list' || operation === 'create' ? '/api/products'
         : `/api/products/${encodeURIComponent(String(id))}${operation === 'status' ? '/status' : operation === 'image' ? '/image' : operation === 'restock' ? '/restock' : ''}`
-      const method = operation === 'list' || operation === 'image' || operation === 'sales' ? 'GET' : operation === 'delete' ? 'DELETE' : operation === 'update' ? 'PUT' : 'POST'
+      const method = operation === 'list' || operation === 'image' || operation === 'sales' || operation === 'accounts' || operation === 'cancelledAccounts' ? 'GET' : operation === 'delete' ? 'DELETE' : operation === 'update' ? 'PUT' : 'POST'
       const response = await fetch(relative, {
         method, credentials: 'same-origin', cache: 'no-store',
         headers: method !== 'GET' ? { 'Content-Type': 'application/json' } : {},
