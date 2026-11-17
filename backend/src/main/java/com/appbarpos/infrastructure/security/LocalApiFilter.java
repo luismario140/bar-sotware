@@ -38,7 +38,7 @@ public class LocalApiFilter extends OncePerRequestFilter {
                 return;
             }
         }
-        if (path.startsWith("/api/auth/")) {
+        if (path.startsWith("/api/auth/") || path.equals("/api/backups") || path.startsWith("/api/backups/")) {
             response.setHeader("Cache-Control", "no-store");
             response.setHeader("Pragma", "no-cache");
             if (request.getContentLengthLong() > 4096) {

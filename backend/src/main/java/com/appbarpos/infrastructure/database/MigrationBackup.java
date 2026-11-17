@@ -21,10 +21,15 @@ public final class MigrationBackup {
     private MigrationBackup() { }
 
     public static Path create(DataSource source, AppDataPaths paths) throws Exception {
+        return create(source, paths, "pre-migration");
+    }
+
+    public static Path create(DataSource source, AppDataPaths paths, String purpose) throws Exception {
+        if (!java.util.Set.of("pre-migration", "manual", "pre-restore").contains(purpose)) throw new IllegalArgumentException("Tipo de respaldo inválido");
         Path backupRoot = paths.root().resolve("backups");
         Path staging = Files.createTempDirectory(backupRoot, ".migration-");
         Path snapshot = staging.resolve("bar.db");
-        Path partial = backupRoot.resolve("pre-migration-" + Instant.now().toEpochMilli() + "-" + UUID.randomUUID() + ".zip.part");
+        Path partial = backupRoot.resolve(purpose + "-" + Instant.now().toEpochMilli() + "-" + UUID.randomUUID() + ".zip.part");
         Path completed = partial.resolveSibling(partial.getFileName().toString().replace(".part", ""));
         try {
             try (var connection = source.getConnection(); var statement = connection.createStatement()) {

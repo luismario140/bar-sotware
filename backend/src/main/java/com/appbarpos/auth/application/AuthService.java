@@ -88,6 +88,12 @@ public class AuthService {
         transaction.executeWithoutResult(status -> repository.audit("LOGOUT", clock.millis(), null, null));
     }
 
+    public synchronized void confirmPin(long credentialVersion, String pin) {
+        var admin = repository.find().orElseThrow(AuthService::unauthenticated);
+        if (admin.credentialVersion() != credentialVersion) throw unauthenticated();
+        login(admin.username(), pin);
+    }
+
     private AuthException verify(Administrator admin, String username, String pin) {
         long now = clock.millis();
         if (admin.lockedUntil() > now) return locked(admin.lockedUntil() - now);
