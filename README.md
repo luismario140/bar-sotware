@@ -27,7 +27,6 @@ backend/                  Spring Boot + Maven Wrapper
 database/migrations/      SQL versionado, incorporado al JAR
 desktop/                  Electron y preload limitado
 installer/                Electron Builder y verificación de recursos
-docker/                   Herramientas opcionales de desarrollo
 docs/                     Requisitos, arquitectura y datos
 scripts/                  Arranque seguro del backend para desarrollo web
 ```
