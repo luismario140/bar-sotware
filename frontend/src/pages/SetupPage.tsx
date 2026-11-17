@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { StatusCard } from '../components/StatusCard'
 import { getSystemHealth, type SystemHealth } from '../services/system'
 import { CredentialsForm } from '../components/CredentialsForm'
+import { AppFooter } from '../components/AppFooter'
 import { ProductsPage } from './ProductsPage'
 import { SalesPage } from './SalesPage'
 
@@ -54,7 +55,7 @@ export function SetupPage({ username, onLogout, onCredentialsChanged }: {
             finally { setLoggingOut(false) }
           }}>{loggingOut ? 'Cerrando…' : 'Cerrar sesión'}</button>
         {logoutError && <p className="form-error" role="alert">{logoutError}</p>}
-        <footer className="sidebar-footer">Desarrollado por Luis Mario<br /><span>AppBarPOS</span></footer>
+        <AppFooter />
       </aside>
       <main id="inicio" className={`app-main ${section === 'sales' ? 'app-main-sales' : ''}`}>
         <header className="page-header">

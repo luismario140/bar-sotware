@@ -141,6 +141,12 @@ Las imágenes importadas y el respaldo automático previo a migraciones ya funci
 La interfaz de respaldo/restauración sigue pendiente. Fuera de Windows se utiliza
 ~/.local/share/BarSoftware como alternativa de desarrollo.
 
+El footer de escritorio muestra la versión del ejecutable, los créditos de Mario Dev
+y la fecha del último respaldo previo a migraciones finalizado en `backups/`, en la
+hora local del equipo. Ignora archivos parciales; si no hay copias registradas lo indica.
+La consulta se actualiza al enfocar la ventana y cada minuto. Esta información no crea
+respaldos adicionales. `npm test` en `desktop/` verifica la lectura de estos metadatos.
+
 Para aislar pruebas manuales, definir antes de ejecutar:
 
 ```powershell

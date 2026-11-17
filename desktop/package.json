@@ -9,6 +9,7 @@
   "engines": { "node": ">=22.12.0" },
   "scripts": {
     "start": "node scripts/start.cjs",
+    "test": "node --test tests/*.test.cjs",
     "check": "node --check src/main.cjs && node --check src/preload.cjs && node --check src/backend.cjs && node --check src/auth-ipc.cjs && node --check src/catalog-ipc.cjs && node --check src/catalog-smoke.cjs && node --check src/smoke.cjs && node --check scripts/start.cjs && node --check scripts/smoke.cjs && node --check scripts/verify-resources.cjs",
     "smoke": "node scripts/smoke.cjs",
     "pack:win": "electron-builder --config ../installer/electron-builder.yml --win --x64 --dir",

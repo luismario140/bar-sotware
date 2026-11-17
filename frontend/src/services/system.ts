@@ -4,6 +4,12 @@ export interface SystemHealth {
   database: 'UP' | 'DOWN'
 }
 
+export interface AppInfo {
+  version: string
+  lastBackupAt: string | null
+  backupStatus: 'available' | 'unavailable'
+}
+
 export async function getSystemHealth(signal?: AbortSignal): Promise<SystemHealth> {
   if (window.appbarpos) return window.appbarpos.health()
   const timeout = AbortSignal.timeout(5000)

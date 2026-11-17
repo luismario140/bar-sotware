@@ -3,6 +3,7 @@ const path = require('node:path')
 const { startBackend } = require('./backend.cjs')
 const { registerAuthIpc } = require('./auth-ipc.cjs')
 const { registerCatalogIpc } = require('./catalog-ipc.cjs')
+const { registerAppInfoIpc } = require('./app-info.cjs')
 const { runSmoke } = require('./smoke.cjs')
 const { mkdirSync, readFileSync } = require('node:fs')
 
@@ -72,6 +73,7 @@ if (!app.requestSingleInstanceLock()) {
     })
     registerAuthIpc(ipcMain, window, backend)
     registerCatalogIpc(ipcMain, window, backend)
+    registerAppInfoIpc(ipcMain, window, app, dataDirectory)
     await window.loadFile(app.isPackaged ? frontend : developmentFrontend)
     if (!smoke) {
       showMainWindow()
