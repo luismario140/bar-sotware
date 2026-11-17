@@ -220,7 +220,7 @@ async function runCatalogSmoke(window, backend, helpers) {
   await fill('product-search', '')
   await waitFor("document.querySelectorAll('[data-product-id]').length === 2")
   await evaluate("document.getElementById('security-navigation').click()")
-  await waitFor("document.getElementById('security-current-pin')")
+  await waitFor("document.getElementById('edit-credentials')")
   await evaluate("document.getElementById('products-navigation').click()")
   await waitFor("document.querySelectorAll('[data-product-id]').length === 2")
   if (await evaluate("document.querySelector('[data-product-id=' + CSS.escape(" + JSON.stringify(id) + ") + '] [data-quantity=remaining]').textContent !== '24'")) throw new Error('Las existencias no persisten al recargar.')

@@ -132,6 +132,16 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--color-accent-re
 .pin-entry:focus-within .pin-slot-current { border-color: var(--color-accent); outline: 2px solid var(--color-accent-soft); outline-offset: 2px; }
 .pin-entry:has(input:disabled), fieldset:disabled .pin-entry { opacity: .6; }
 .security-layout { display: grid; grid-template-columns: minmax(320px, 1.15fr) minmax(260px, 1fr); align-items: start; gap: 24px; padding-bottom: 20px; }
+.security-options { min-width: 0; }
+.security-options h2 { font-size: 20px; font-weight: 600; margin: 0 0 16px; }
+.security-option { display: flex; gap: 14px; width: 100%; align-items: center; padding: 18px; border: 1px solid var(--color-border); background: var(--color-surface); text-align: left; }
+.security-option svg { width: 26px; height: 26px; flex-shrink: 0; color: var(--color-text-muted); }
+.security-option > span:first-of-type { flex: 1; min-width: 0; }
+.security-option strong, .security-option small { display: block; }
+.security-option strong { font-size: 14px; }
+.security-option small { font-size: 12px; font-weight: 400; margin-top: 4px; color: var(--color-text-muted); }
+.security-email-note { font-size: 12px; color: var(--color-text-muted); }
+.credentials-panel .credentials-form { max-width: none; }
 .security-panel .eyebrow { margin-bottom: 12px; }
 .security-guidelines { padding: 26px 4px; }
 .security-guidelines h2 { font-size: 20px; font-weight: 600; margin: 0 0 8px; }

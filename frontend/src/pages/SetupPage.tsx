@@ -2,7 +2,7 @@ import { displayName } from '../catalog/names'
 import { useEffect, useState } from 'react'
 import { StatusCard } from '../components/StatusCard'
 import { getSystemHealth, type SystemHealth } from '../services/system'
-import { CredentialsForm } from '../components/CredentialsForm'
+import { SecurityPage } from './SecurityPage'
 import { AppFooter } from '../components/AppFooter'
 import { ProductsPage } from './ProductsPage'
 import { SalesPage } from './SalesPage'
@@ -12,6 +12,8 @@ export function SetupPage({ username, recoveryEmail, onLogout, onCredentialsChan
 }) {
   const [section, setSection] = useState<'products' | 'sales' | 'security' | 'system'>('products')
   const [saleBusy, setSaleBusy] = useState(false)
+  const [securityBusy, setSecurityBusy] = useState(false)
+  const appBusy = saleBusy || securityBusy
   const [logoutError, setLogoutError] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
   const [health, setHealth] = useState<SystemHealth | null>(null)
@@ -44,12 +46,12 @@ export function SetupPage({ username, recoveryEmail, onLogout, onCredentialsChan
         <div className="sidebar-account"><strong>{displayName(username)}</strong><span>Administrador · Acceso local</span></div>
         <p className="sidebar-label">ADMINISTRACIÓN</p>
         <nav aria-label="Navegación principal">
-          <button id="products-navigation" disabled={saleBusy} className={`nav-button ${section === 'products' ? 'nav-active' : ''}`} onClick={() => setSection('products')}>Inventario</button>
-          <button id="sales-navigation" disabled={saleBusy} className={`nav-button ${section === 'sales' ? 'nav-active' : ''}`} onClick={() => setSection('sales')}>Registrar venta</button>
-          <button id="security-navigation" disabled={saleBusy} className={`nav-button ${section === 'security' ? 'nav-active' : ''}`} onClick={() => setSection('security')}>Acceso y seguridad</button>
-          <button id="system-navigation" disabled={saleBusy} className={`nav-button ${section === 'system' ? 'nav-active' : ''}`} onClick={() => setSection('system')}>Estado del sistema</button>
+          <button id="products-navigation" disabled={appBusy} className={`nav-button ${section === 'products' ? 'nav-active' : ''}`} onClick={() => setSection('products')}>Inventario</button>
+          <button id="sales-navigation" disabled={appBusy} className={`nav-button ${section === 'sales' ? 'nav-active' : ''}`} onClick={() => setSection('sales')}>Registrar venta</button>
+          <button id="security-navigation" disabled={appBusy} className={`nav-button ${section === 'security' ? 'nav-active' : ''}`} onClick={() => setSection('security')}>Acceso y seguridad</button>
+          <button id="system-navigation" disabled={appBusy} className={`nav-button ${section === 'system' ? 'nav-active' : ''}`} onClick={() => setSection('system')}>Estado del sistema</button>
         </nav>
-        <button id="logout" className="secondary-button sidebar-logout" disabled={loggingOut || saleBusy} onClick={async () => {
+        <button id="logout" className="secondary-button sidebar-logout" disabled={loggingOut || appBusy} onClick={async () => {
             setLoggingOut(true); setLogoutError('')
             try { await onLogout() } catch (failure) { setLogoutError(failure instanceof Error ? failure.message : 'No se pudo cerrar la sesión.') }
             finally { setLoggingOut(false) }
@@ -62,7 +64,7 @@ export function SetupPage({ username, recoveryEmail, onLogout, onCredentialsChan
           <div><p className="eyebrow">APPBARPOS / ADMINISTRACIÓN</p><h1>{section === 'products' ? 'Inventario' : section === 'sales' ? 'Registrar venta' : section === 'security' ? 'Acceso y seguridad' : 'Estado del sistema'}</h1></div>
         </header>
         <div className={`page-content ${section === 'sales' ? 'page-content-sales' : section === 'products' ? 'page-content-inventory' : ''}`}>
-        {section === 'products' ? <ProductsPage /> : section === 'sales' ? null : section === 'security' ? <CredentialsForm username={username} recoveryEmail={recoveryEmail} onChanged={onCredentialsChanged} /> : <>
+        {section === 'products' ? <ProductsPage /> : section === 'sales' ? null : section === 'security' ? <SecurityPage username={username} recoveryEmail={recoveryEmail} onCredentialsChanged={onCredentialsChanged} onBusyChange={setSecurityBusy} /> : <>
         <section className="welcome">
           <p className="eyebrow">UN PUNTO DE PARTIDA PARA TU BAR</p>
           <h2>Todo comienza con una base sólida.</h2>

@@ -1,12 +1,12 @@
 import { PinField } from './PinField'
 import { UsernameField } from './UsernameField'
 import { displayName } from '../catalog/names'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useAuthAction } from '../auth/useAuthAction'
 import { authRequest } from '../services/auth'
 import { AuthFeedback } from './AuthFeedback'
 
-export function CredentialsForm({ username: original, recoveryEmail: originalEmail, onChanged }: { username: string; recoveryEmail: string | null; onChanged: () => void }) {
+export function CredentialsForm({ username: original, recoveryEmail: originalEmail, onChanged, onBusyChange }: { username: string; recoveryEmail: string | null; onChanged: () => void; onBusyChange: (busy: boolean) => void }) {
   const [username, setUsername] = useState(original)
   const [recoveryEmail, setRecoveryEmail] = useState(originalEmail || '')
   const [currentPin, setCurrentPin] = useState('')
@@ -14,6 +14,7 @@ export function CredentialsForm({ username: original, recoveryEmail: originalEma
   const [confirmation, setConfirmation] = useState('')
   const [confirming, setConfirming] = useState(false)
   const action = useAuthAction()
+  useEffect(() => { onBusyChange(action.busy); return () => onBusyChange(false) }, [action.busy, onBusyChange])
 
   function prepare(event: FormEvent) {
     event.preventDefault()
@@ -33,9 +34,7 @@ export function CredentialsForm({ username: original, recoveryEmail: originalEma
     })
   }
 
-  return <div className="security-layout"><section className="security-panel">
-    <p className="eyebrow">CREDENCIALES DEL ADMINISTRADOR</p>
-    <h2>Cambiar usuario o PIN</h2>
+  return <section className="credentials-panel">
     <p className="form-description">Confirma tu PIN actual para guardar los cambios. Tu inventario e historial se conservarán.</p>
     <form className="access-form credentials-form" onSubmit={prepare}>
       <fieldset disabled={confirming || action.busy}>
@@ -61,18 +60,5 @@ export function CredentialsForm({ username: original, recoveryEmail: originalEma
         </div>}
     </form>
   </section>
-  <aside className="security-guidelines" aria-labelledby="security-guidelines-title">
-    <p className="eyebrow">CUIDA EL ACCESO A TU BAR</p>
-    <h2 id="security-guidelines-title">Reglas de uso seguro</h2>
-    <p>Buenas prácticas para el administrador de este equipo.</p>
-    <ol>
-      <li><strong>Un acceso personal.</strong><span>No compartas tu usuario ni tu PIN con otras personas.</span></li>
-      <li><strong>Conserva acceso a tu correo.</strong><span>Comprueba que esté bien escrito, protege esa cuenta con verificación en dos pasos y actualízala aquí si cambia. Allí recibirás los códigos para restablecer tu PIN; nunca los compartas.</span></li>
-      <li><strong>Elige bien tus 4 dígitos.</strong><span>Evita secuencias, números repetidos y fechas fáciles de adivinar.</span></li>
-      <li><strong>Cierra tu sesión.</strong><span>Usa «Cerrar sesión» cuando termines o dejes el puesto sin supervisión.</span></li>
-      <li><strong>Protege este equipo.</strong><span>Bloquea Windows al alejarte y conserva una copia de seguridad de tus datos en un lugar seguro.</span></li>
-    </ol>
-    <div className="security-notice"><strong>Sobre tu acceso</strong><p>El PIN se almacena como un hash, no como texto visible. Los intentos fallidos repetidos activan un bloqueo temporal. Cambiar las credenciales cierra la sesión.</p><p>Si lo olvidas, usa «Recuperar acceso» en el login. El código del correo vence en 10 minutos y solo sirve una vez. Necesitas internet y el envío de correo configurado en este equipo. No existe un PIN maestro.</p></div>
-  </aside>
-  </div>
+
 }
