@@ -241,12 +241,8 @@ nuevos usan el precio actual. No se permite eliminar del inventario un producto 
 Al escoger «Cerrada» y completar la venta se cobra la cuenta y se cuentan sus productos
 vendidos, sin descontar las reservas otra vez. Descartar cambios de una cuenta retomada
 conserva su última versión guardada. El nombre puede quedar vacío tanto al abrir como al cerrar.
-«Anular» en la lista de cuentas abiertas, o «Anular cuenta» al retomarla, pide confirmación
-y devuelve sus reservas al inventario sin registrar ventas ni modificar las cantidades
-vendidas. Se conserva la cuenta, quién la anuló, la fecha y las unidades devueltas.
-«Anuladas» muestra las últimas 20 anulaciones. Volver de la confirmación conserva la cuenta;
-al confirmar se descartan sus cambios sin guardar y se devuelven solo las reservas guardadas.
-Reintentar no devuelve stock dos veces. Las cuentas ya cobradas no se anulan desde esta opción.
+La interfaz ya no ofrece «Anular cuenta» ni la sección «Anuladas». Se conservan los
+registros históricos de anulaciones existentes, sin modificar ventas ni inventario.
 
 Los nombres de productos y de usuario se muestran con la inicial de cada palabra en
 mayúscula, por ejemplo «Aguardiente Antioqueño», sin cambiar las credenciales guardadas.

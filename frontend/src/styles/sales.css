@@ -92,9 +92,6 @@
 .ticket-checkout-options label { display: block; }
 .ticket-checkout-options label span { color: var(--receipt-muted); }
 .ticket-checkout-options input { display: block; width: 100%; margin-top: 4px; padding: 6px 8px; font-size: 11px; color: var(--receipt-ink); background: var(--receipt-input); border: 1px solid var(--receipt-border); border-radius: 4px; text-transform: capitalize; }
-.open-accounts-toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding-top: 8px; }
-.open-accounts-toolbar button { font-size: 12px; padding: 8px 12px; }
-.open-accounts-toolbar button span { margin-left: 8px; color: var(--color-accent-readable); }
 .editing-account { color: var(--color-text-muted); font-size: 12px; }
 .open-accounts-list { display: grid; gap: 8px; margin-top: 12px; }
 .open-accounts-list button { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-available-border); text-align: left; font-size: 12px; border-color: var(--color-border); }
@@ -102,14 +99,6 @@
 .open-account-row { display: flex; gap: 8px; }
 .open-account-row > button:first-child { flex: 1; min-width: 0; }
 .open-account-row strong { overflow-wrap: anywhere; }
-.open-accounts-list .account-cancel-button { flex-shrink: 0; padding: 10px; color: var(--color-danger); background: var(--color-danger-soft); border-color: var(--color-danger-border); }
-.ticket-secondary-actions { display: flex; align-items: center; gap: 6px; }
-.ticket-secondary-actions .ticket-clear { width: auto; flex: 1; }
-.ticket-void { flex: 1; padding: 8px 4px; font-size: 11px; color: var(--receipt-danger); background: var(--color-transparent); }
-.ticket-void:hover { background: var(--receipt-danger-soft); }
-.cancelled-accounts-list { margin-top: 14px; }
-.cancelled-accounts-list article { padding: 12px; margin-top: 8px; border: 1px dashed var(--color-danger-border); border-radius: 7px; color: var(--color-danger); font-size: 12px; }
-.cancelled-accounts-list article small { display: block; margin-top: 4px; color: var(--color-disabled); font-size: 11px; }
 .ticket-account-details { padding: 10px 0; border-bottom: 1px dashed var(--receipt-border); font-size: 10px; color: var(--receipt-ink); }
 .ticket-account-details p { margin: 3px 0; overflow-wrap: anywhere; }
 @media (min-width: 651px) and (max-height: 750px) {

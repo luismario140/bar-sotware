@@ -6,8 +6,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { CATEGORIES, canonicalCategory, packageLabel, requiresVolume } from '../catalog/categories'
 import { money } from '../catalog/money'
 import { SavedReceipt, saleDate } from '../catalog/SavedReceipt'
-import { Modal } from '../components/Modal'
-import { catalogRequest, type Product, type SaleReceipt, type SalesHistory, type OpenAccount, type AccountCancellation } from '../services/catalog'
+import { catalogRequest, type Product, type SaleReceipt, type SalesHistory, type OpenAccount } from '../services/catalog'
 
 interface Props { active: boolean; onBusyChange: (busy: boolean) => void }
 
@@ -36,10 +35,6 @@ export function SalesPage({ active, onBusyChange }: Props) {
   const [selectedAccount, setSelectedAccount] = useState<OpenAccount | null>(null)
   const [showAccounts, setShowAccounts] = useState(false)
   const [savedMessage, setSavedMessage] = useState('Venta guardada')
-  const [cancellation, setCancellation] = useState<{ account: OpenAccount; operation: string } | null>(null)
-  const [cancellationError, setCancellationError] = useState('')
-  const [cancelledAccounts, setCancelledAccounts] = useState<AccountCancellation[]>([])
-  const [showCancelled, setShowCancelled] = useState(false)
   const [noticeVersion, setNoticeVersion] = useState(0)
 
   useEffect(() => {
@@ -51,8 +46,8 @@ export function SalesPage({ active, onBusyChange }: Props) {
   const reload = useCallback(async () => {
     setLoading(true); setLoadError('')
     try {
-      const [products, accounts, cancelled] = await Promise.all([catalogRequest<Product[]>('list'), catalogRequest<OpenAccount[]>('accounts'), catalogRequest<AccountCancellation[]>('cancelledAccounts')])
-      setProducts(products); setAccounts(accounts); setCancelledAccounts(cancelled)
+      const [products, accounts] = await Promise.all([catalogRequest<Product[]>('list'), catalogRequest<OpenAccount[]>('accounts')])
+      setProducts(products); setAccounts(accounts)
     }
     catch (failure) { setLoadError(failure instanceof Error ? failure.message : 'No se pudieron cargar los productos.') }
     finally { setLoading(false) }
@@ -105,23 +100,6 @@ export function SalesPage({ active, onBusyChange }: Props) {
     })
   }
 
-  function requestCancellation(account: OpenAccount) {
-    if (busy) return
-    setCancellationError(''); setCancellation({ account, operation: crypto.randomUUID() })
-  }
-
-  async function cancelAccount() {
-    if (!cancellation || busy) return
-    setBusy(true); onBusyChange(true); setCancellationError('')
-    try {
-      await catalogRequest<AccountCancellation>('cancelAccount', { operationId: cancellation.operation, accountId: cancellation.account.id, expectedVersion: cancellation.account.version })
-      if (selectedAccount?.id === cancellation.account.id) resetDraft()
-      setCancellation(null); setSavedMessage('Cuenta anulada. Stock devuelto.'); setSaleSaved(true); setNoticeVersion(value => value + 1)
-      await reload()
-    } catch (failure) { setCancellationError(failure instanceof Error ? failure.message : 'No se pudo anular la cuenta. Puedes reintentar sin duplicar la devolución.') }
-    finally { setBusy(false); onBusyChange(false) }
-  }
-
   function blocked(product: Product) {
     if (!canonicalCategory(product.category)) return 'Revisa su categoría en Inventario'
     if (product.unitPriceMinor === null) return 'Configura un precio por unidad'
@@ -167,9 +145,8 @@ export function SalesPage({ active, onBusyChange }: Props) {
       <p className="form-description">Selecciona productos para agregarlos al comprobante. Cada tarjeta agrega una unidad.</p>
       <div className="sales-workspace">
         <div className="sales-catalog">
-          <div className="open-accounts-toolbar"><button id="cancelled-accounts-toggle" type="button" className="secondary-button" disabled={busy || loading} aria-expanded={showCancelled} onClick={() => setShowCancelled(value => !value)}>Anuladas</button>{selectedAccount && <span className="editing-account">{displayName(selectedAccount.name || `Cuenta ${selectedAccount.id.slice(0, 8).toUpperCase()}`)}</span>}</div>
-          {showAccounts && <div className="open-accounts-list">{lines.length > 0 && <p className="field-help">Guarda o vacía el comprobante actual antes de retomar otra cuenta.</p>}{accounts.length ? accounts.map(account => <div className="open-account-row" key={account.id}><button type="button" data-open-account={account.id} disabled={busy || lines.length > 0 || Boolean(selectedAccount)} onClick={() => resumeAccount(account)}><span><strong>{displayName(account.name || `Cuenta ${account.id.slice(0, 8).toUpperCase()}`)}</strong><small>Abierta · {paymentLabel(account.paymentMethod)} · {account.lines.length} productos</small></span><strong>{money(account.totalMinor)}</strong></button><button type="button" className="account-cancel-button" data-cancel-account={account.id} disabled={busy} aria-label={`Anular ${displayName(account.name || 'cuenta')}`} onClick={() => requestCancellation(account)}>Anular</button></div>) : <p className="field-help">No hay cuentas abiertas.</p>}</div>}
-          {showCancelled && <section className="cancelled-accounts-list" aria-label="Cuentas anuladas"><p className="field-help">Últimas 20 cuentas anuladas · Stock devuelto · Sin cobro</p>{cancelledAccounts.length ? cancelledAccounts.map(item => <article key={item.id} data-cancelled-account={item.account.id}><strong>{displayName(item.account.name || `Cuenta ${item.account.id.slice(0, 8).toUpperCase()}`)}</strong><small>Anulada · {saleDate(item.occurredAt)} · {item.account.lines.length} productos</small></article>) : <p className="field-help">No hay cuentas anuladas.</p>}</section>}
+          {selectedAccount && <div className="editing-account">{displayName(selectedAccount.name || `Cuenta ${selectedAccount.id.slice(0, 8).toUpperCase()}`)}</div>}
+          {showAccounts && <div className="open-accounts-list">{lines.length > 0 && <p className="field-help">Guarda o vacía el comprobante actual antes de retomar otra cuenta.</p>}{accounts.length ? accounts.map(account => <div className="open-account-row" key={account.id}><button type="button" data-open-account={account.id} disabled={busy || lines.length > 0 || Boolean(selectedAccount)} onClick={() => resumeAccount(account)}><span><strong>{displayName(account.name || `Cuenta ${account.id.slice(0, 8).toUpperCase()}`)}</strong><small>Abierta · {paymentLabel(account.paymentMethod)} · {account.lines.length} productos</small></span><strong>{money(account.totalMinor)}</strong></button></div>) : <p className="field-help">No hay cuentas abiertas.</p>}</div>}
           <div className="sales-category-tabs" role="group" aria-label="Filtrar productos por categoría"><button className={!category ? 'is-selected' : ''} aria-pressed={!category} disabled={busy} onClick={() => setCategory('')}>Todas</button>{CATEGORIES.map((name) => <button key={name} aria-pressed={category === name} className={category === name ? 'is-selected' : ''} disabled={busy} onClick={() => setCategory(name)}>{name}</button>)}</div>
           {loadError && <p className="form-error" role="alert">{loadError}</p>}
           {loading ? <p className="sales-empty" role="status">Cargando productos…</p> : groups.length ? groups.map((group) => <section className="sales-category" key={group.name}><h2>{group.name}<span>{group.products.length}</span></h2><div className="sales-product-grid">{group.products.map((product) => {
@@ -196,7 +173,7 @@ export function SalesPage({ active, onBusyChange }: Props) {
               <label htmlFor="sale-account-name">Nombre de cuenta <span>(opcional)</span><input id="sale-account-name" type="text" maxLength={80} value={accountName} disabled={busy} placeholder="Ej. Amigos de Mario" onChange={event => change(() => setAccountName(event.target.value))} /></label>
             </div>
             {error && <p className="form-error" role="alert">{error}</p>}
-            <button id="complete-sale" className="ticket-complete" type="submit" disabled={busy || loading || Boolean(loadError) || !valid}>{busy ? 'Guardando…' : accountState === 'ABIERTA' ? 'Guardar cuenta abierta' : 'Completar venta'}</button><div className="ticket-secondary-actions"><button id="clear-sale" className="ticket-clear" type="button" disabled={busy || !lines.length} onClick={() => change(resetDraft)}>{selectedAccount ? 'Descartar cambios' : 'Vaciar comprobante'}</button>{selectedAccount && <button id="cancel-current-account" type="button" className="ticket-void" disabled={busy} onClick={() => requestCancellation(selectedAccount)}>Anular cuenta</button>}</div>
+            <button id="complete-sale" className="ticket-complete" type="submit" disabled={busy || loading || Boolean(loadError) || !valid}>{busy ? 'Guardando…' : accountState === 'ABIERTA' ? 'Guardar cuenta abierta' : 'Completar venta'}</button><button id="clear-sale" className="ticket-clear" type="button" disabled={busy || !lines.length} onClick={() => change(resetDraft)}>{selectedAccount ? 'Descartar cambios' : 'Vaciar comprobante'}</button>
             <div className="ticket-footer"><span className="ticket-barcode" aria-hidden="true" /><p>Venta por unidades completas · COP</p></div>
           </form>
         </aside>
@@ -205,12 +182,5 @@ export function SalesPage({ active, onBusyChange }: Props) {
       <div className="sales-history-heading"><p className="form-description">Últimas 20 ventas · 4 por página. Exporta el historial completo a Excel.</p><button id="export-sales" type="button" className="secondary-button" disabled={exporting} onClick={() => void exportSales()}>{exporting ? 'Preparando Excel…' : 'Exportar Excel'}</button>{exportError && <p className="form-error" role="alert">{exportError}</p>}</div>
       <div className="sales-workspace"><div className="sales-history-list">{historyError && <p className="form-error" role="alert">{historyError}</p>}{historyLoading ? <p role="status">Cargando ventas…</p> : history?.sales.length ? <>{history.sales.map((sale) => <button type="button" className={`history-sale ${selectedSale?.id === sale.id ? 'is-selected' : ''}`} key={sale.id} data-history-sale={sale.id} onClick={() => setSelectedSale(sale)}><span><strong>{sale.accountName ? displayName(sale.accountName) : `Venta ${sale.id.slice(0, 8).toUpperCase()}`}</strong><small>{paymentLabel(sale.paymentMethod)} · {saleDate(sale.occurredAt)} · {sale.lines.length} {sale.lines.length === 1 ? 'producto' : 'productos'}</small></span><strong>{money(sale.totalMinor)}</strong></button>)}<div className="sales-pagination"><button className="secondary-button" disabled={historyPage === 0 || historyLoading} onClick={() => setHistoryPage((page) => Math.max(0, page - 1))}>Anterior</button><span>Página {historyPage + 1} de {HISTORY_MAX_PAGES}</span><button className="secondary-button" disabled={!history.hasNext || historyLoading || historyPage >= HISTORY_MAX_PAGES - 1} onClick={() => setHistoryPage((page) => Math.min(HISTORY_MAX_PAGES - 1, page + 1))}>Siguiente</button></div></> : <p className="sales-empty">Todavía no hay ventas guardadas.</p>}</div><aside className="sales-receipt" aria-label="Detalle de la venta guardada">{selectedSale && <SavedReceipt sale={selectedSale} />}</aside></div>
     </>}
-    {cancellation && <Modal title="Anular cuenta" busy={busy} onClose={() => setCancellation(null)}>
-      <p>¿Anular <strong>{displayName(cancellation.account.name || `Cuenta ${cancellation.account.id.slice(0, 8).toUpperCase()}`)}</strong>?</p>
-      <p className="form-description">Los productos reservados volverán al inventario. La cuenta quedará anulada, sin registrar un cobro.</p>
-      {selectedAccount?.id === cancellation.account.id && <p className="field-help">Se descartarán los cambios que aún no has guardado en esta cuenta.</p>}
-      {cancellationError && <p className="form-error" role="alert">{cancellationError}</p>}
-      <footer className="dialog-actions"><button type="button" className="secondary-button" disabled={busy} onClick={() => setCancellation(null)}>Volver</button><button id="confirm-account-cancel" type="button" className="danger-button" disabled={busy} onClick={() => void cancelAccount()}>{busy ? 'Anulando…' : 'Anular cuenta'}</button></footer>
-    </Modal>}
   </section>
 }
