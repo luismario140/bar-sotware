@@ -1,14 +1,14 @@
 const { readdir } = require('node:fs/promises')
 const path = require('node:path')
 
-// Solo archivos terminados por MigrationBackup; los .part nunca cuentan.
+// Solo respaldos completos de AppBarPOS; los .part nunca cuentan.
 async function readBackupInfo(dataDirectory) {
   try {
     const entries = await readdir(path.join(dataDirectory, 'backups'), { withFileTypes: true })
     let latest = 0
     for (const entry of entries) {
       if (!entry.isFile()) continue
-      const match = /^pre-migration-(\d+)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.zip$/i.exec(entry.name)
+      const match = /^(?:pre-migration|manual|pre-restore)-(\d+)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.zip$/i.exec(entry.name)
       if (!match) continue
       const timestamp = Number(match[1])
       if (Number.isSafeInteger(timestamp) && timestamp > latest && !Number.isNaN(new Date(timestamp).getTime())) latest = timestamp

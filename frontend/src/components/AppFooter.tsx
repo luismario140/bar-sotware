@@ -22,7 +22,8 @@ export function AppFooter({ className = '' }: { className?: string }) {
     void refresh()
     const timer = window.setInterval(() => { void refresh() }, 60000)
     window.addEventListener('focus', refresh)
-    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', refresh) }
+    window.addEventListener('appbarpos:backup-updated', refresh)
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener('appbarpos:backup-updated', refresh) }
   }, [])
 
   const timestamp = info?.lastBackupAt ? new Date(info.lastBackupAt) : null

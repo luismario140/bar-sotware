@@ -42,6 +42,16 @@ test('un error al consultar se distingue de la ausencia de respaldos', async (t)
   assert.deepEqual(await readBackupInfo(root), { lastBackupAt: null, backupStatus: 'unavailable' })
 })
 
+test('incluye las copias manuales y las previas a restaurar', async (t) => {
+  const root = await fixture(t)
+  const directory = path.join(root, 'backups')
+  await mkdir(directory)
+  const timestamp = Date.UTC(2026, 0, 1, 12)
+  await writeFile(path.join(directory, name(timestamp).replace('pre-migration', 'manual')), '')
+  await writeFile(path.join(directory, name(timestamp + 60000).replace('pre-migration', 'pre-restore')), '')
+  assert.equal((await readBackupInfo(root)).lastBackupAt, new Date(timestamp + 60000).toISOString())
+})
+
 test('el IPC devuelve la versión instalada y rechaza otros orígenes', async (t) => {
   const root = await fixture(t)
   let handler

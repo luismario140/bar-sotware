@@ -10,6 +10,7 @@ export function SecurityGuidelines() {
       <li><strong>Cierra tu sesión.</strong><span>Usa «Cerrar sesión» cuando termines o dejes el puesto sin supervisión.</span></li>
       <li><strong>Protege este equipo.</strong><span>Bloquea Windows al alejarte y conserva una copia de seguridad de tus datos en un lugar seguro.</span></li>
     </ol>
+    <div className="security-notice"><strong>Conserva una copia fuera del equipo</strong><p>Crea un respaldo al terminar la jornada y usa «Guardar copia…» para llevarlo a una USB o a otra ubicación segura. Las copias automáticas previas a una actualización no sustituyen ese hábito.</p><p>Restaura solo archivos de confianza. Al restaurar vuelves al estado del respaldo, incluidos el usuario y el PIN de ese momento.</p></div>
     <div className="security-notice"><strong>Sobre tu acceso</strong><p>El PIN se almacena como un hash, no como texto visible. Los intentos fallidos repetidos activan un bloqueo temporal. Cambiar las credenciales cierra la sesión.</p><p>Si lo olvidas, usa «Recuperar acceso» en el login. El código del correo vence en 10 minutos y solo sirve una vez. Necesitas internet y el envío de correo configurado en este equipo. No existe un PIN maestro.</p></div>
   </aside>
 }

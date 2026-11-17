@@ -68,7 +68,7 @@ async function startBackend({ packaged, resourcesPath, dataDirectory }) {
   })
   const origin = `http://127.0.0.1:${port}`
   let sessionCookie = ''
-  async function request(relative, method, payload, image = false) {
+  async function request(relative, method, payload, image = false, timeout = 20000) {
     const response = await fetch(origin + relative, {
       method,
       headers: {
@@ -77,7 +77,7 @@ async function startBackend({ packaged, resourcesPath, dataDirectory }) {
         ...(sessionCookie ? { Cookie: sessionCookie } : {}),
       },
       body: payload ? JSON.stringify(payload) : undefined,
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(timeout),
     })
     for (const cookie of response.headers.getSetCookie()) {
       if (cookie.startsWith('APPBARPOS_SESSION=')) sessionCookie = cookie.split(';')[0]
@@ -128,9 +128,14 @@ async function startBackend({ packaged, resourcesPath, dataDirectory }) {
       if (operation === 'restock') return request(relative + '/restock', 'POST', body)
       return request(relative + (operation === 'status' ? '/status' : ''), operation === 'status' ? 'POST' : 'PUT', body)
     },
+    async backups(operation, payload) {
+      const routes = { list: '', create: '/create', inspect: '/inspect', prepareRestore: '/prepare-restore', cancelRestore: '/cancel-restore' }
+      if (!Object.hasOwn(routes, operation)) throw new Error('Operación no permitida.')
+      return request('/api/backups' + routes[operation], operation === 'list' ? 'GET' : 'POST', payload, false, 300000)
+    },
     async stop() {
       expectedExit = true
-      if (child.exitCode !== null) return
+      if (child.exitCode !== null || child.signalCode !== null) return
       const exited = new Promise((resolve) => child.once('exit', resolve))
       try {
         await fetch(`${origin}/api/system/shutdown`, {
@@ -145,6 +150,12 @@ async function startBackend({ packaged, resourcesPath, dataDirectory }) {
         new Promise((resolve) => { timer = setTimeout(() => { child.kill(); resolve() }, 12000) }),
       ])
       clearTimeout(timer)
+      if (child.exitCode === null && child.signalCode === null) {
+        let finalTimer
+        await Promise.race([exited, new Promise(resolve => { finalTimer = setTimeout(resolve, 5000) })])
+        clearTimeout(finalTimer)
+        if (child.exitCode === null && child.signalCode === null) throw new Error('No se pudo detener el servicio local de forma segura.')
+      }
     },
   }
 }
