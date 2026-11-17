@@ -138,11 +138,13 @@ Se conserva la ubicación documentada, independiente del nombre visible del prod
 
 Reinstalar no debe borrar este directorio. Cada usuario Windows tiene datos propios.
 Las imágenes importadas y el respaldo automático previo a migraciones ya funcionan.
-La interfaz de respaldo/restauración sigue pendiente. Fuera de Windows se utiliza
+En «Acceso y seguridad» se pueden crear, exportar y restaurar respaldos con PIN y
+copia previa automática; consulta [la guía de respaldos](docs/respaldos.md).
+Fuera de Windows se utiliza
 ~/.local/share/BarSoftware como alternativa de desarrollo.
 
 El footer de escritorio muestra la versión del ejecutable, los créditos de Mario Dev
-y la fecha del último respaldo previo a migraciones finalizado en `backups/`, en la
+y la fecha del último respaldo completo (manual, previo a migrar o a restaurar) en `backups/`, en la
 hora local del equipo. Ignora archivos parciales; si no hay copias registradas lo indica.
 La consulta se actualiza al enfocar la ventana y cada minuto. Esta información no crea
 respaldos adicionales. `npm test` en `desktop/` verifica la lectura de estos metadatos.
@@ -281,11 +283,13 @@ flyway_schema_history. V1 crea app_metadata; V2 añade administrator y administr
 V3 añade product, sale_presentation y product_operation; V4 añade las cantidades de inventario;
 V5 registra la eliminación de productos sin borrar su historial; V6 añade presentaciones,
 volúmenes, ventas y movimientos de inventario; V7 añade cuentas abiertas y sus operaciones;
-V8 conserva las anulaciones de cuentas y la devolución de sus reservas.
-No editar migraciones aplicadas: añadir V9__descripcion.sql, etc. No se utiliza ddl-auto
+V8 conserva las anulaciones de cuentas y la devolución de sus reservas;
+V9 añade el correo y los códigos temporales de recuperación del acceso.
+No editar migraciones aplicadas: añadir V10__descripcion.sql, etc. No se utiliza ddl-auto
 y Flyway clean está deshabilitado. Si una base existente necesita migración, se genera
 antes un ZIP con una copia SQLite consistente, medios y manifiesto SHA-256; si falla,
-el arranque se detiene antes de migrar. La interfaz de restauración sigue pendiente.
+el arranque se detiene antes de migrar. La restauración se administra desde
+«Acceso y seguridad» y reinicia el servicio después de validar el respaldo.
 Ver [estrategia de datos](docs/database/migraciones.md).
 
 SQLite habilita claves foráneas por conexión, WAL, sincronización FULL y espera de

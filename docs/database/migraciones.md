@@ -51,10 +51,11 @@ la imagen nueva no referenciada. Si no se puede determinar el estado del commit,
 conserva el archivo. Las imágenes anteriores no se borran automáticamente y siguen
 incluidas en los respaldos completos.
 
-Todavía están pendientes la interfaz de respaldo/restauración manual, su validación
-completa, selección de destino externo, retención y automatización al cierre de jornada.
-No presentar el respaldo previo a migrar como recuperación de PIN: restablecer el
-acceso por correo sigue requiriendo el servicio externo verificado pendiente.
+La interfaz de respaldo y restauración manual, la validación del ZIP y la selección
+de destino externo están implementadas en «Acceso y seguridad»; consultar
+[la guía de respaldos](../respaldos.md). Siguen pendientes la retención automática
+y la automatización al cierre de jornada. La recuperación del PIN por correo es
+un flujo independiente que necesita una cuenta emisora configurada.
 
 Fuentes: [Flyway](https://documentation.red-gate.com/flyway),
 [claves foráneas SQLite](https://www.sqlite.org/foreignkeys.html) y
