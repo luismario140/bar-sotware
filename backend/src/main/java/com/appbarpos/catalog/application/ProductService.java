@@ -166,6 +166,13 @@ public class ProductService {
                 throw CatalogException.invalid("Selecciona media, botella o litro e indica su contenido en ml (1 a 10000).");
             }
             packageKind = input.packageKind(); volumeMl = input.volumeMl();
+        } else if (category.equals("Cócteles") || category.equals("Bebidas preparadas mezclas")) {
+            if (input.packageKind() != null && !List.of("VASO", "COPA").contains(input.packageKind())) throw CatalogException.invalid("Selecciona vaso o copa.");
+            packageKind = input.packageKind();
+        } else {
+            if (input.packageKind() != null && !List.of("MEDIA", "BOTELLA", "LITRO").contains(input.packageKind())) throw CatalogException.invalid("Presentación inválida.");
+            if (input.volumeMl() != null && (input.volumeMl() < 1 || input.volumeMl() > 10000)) throw CatalogException.invalid("Indica un contenido en ml entre 1 y 10000.");
+            packageKind = input.packageKind(); volumeMl = input.volumeMl();
         }
         final String selectedPackage = packageKind;
         final Integer selectedVolume = volumeMl;

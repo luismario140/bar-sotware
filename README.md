@@ -200,6 +200,9 @@ que no se ofrece; al menos una debe tener precio. Usar valores no negativos, sin
 de miles y con hasta dos decimales (por ejemplo, 6500,50). Java y SQLite guardan centavos
 enteros y la interfaz conserva la precisión al editar, incluso en importes grandes.
 
+En las demás categorías de bebidas envasadas se puede registrar el contenido en ml.
+Los cócteles y las bebidas preparadas pueden identificar su presentación como vaso o copa.
+
 El formulario permite registrar o corregir cantidades restantes enteras no negativas;
 la cantidad vendida es de solo lectura. «Agregar existencias» suma unidades nuevas
 sobre las disponibles sin modificar lo vendido. Ambos cambios se guardan en SQLite.
@@ -285,7 +288,7 @@ V5 registra la eliminación de productos sin borrar su historial; V6 añade pres
 volúmenes, ventas y movimientos de inventario; V7 añade cuentas abiertas y sus operaciones;
 V8 conserva las anulaciones de cuentas y la devolución de sus reservas;
 V9 añade el correo y los códigos temporales de recuperación del acceso.
-No editar migraciones aplicadas: añadir V10__descripcion.sql, etc. No se utiliza ddl-auto
+V10 añade la presentación vaso o copa. No editar migraciones aplicadas: añadir V11__descripcion.sql, etc. No se utiliza ddl-auto
 y Flyway clean está deshabilitado. Si una base existente necesita migración, se genera
 antes un ZIP con una copia SQLite consistente, medios y manifiesto SHA-256; si falla,
 el arranque se detiene antes de migrar. La restauración se administra desde

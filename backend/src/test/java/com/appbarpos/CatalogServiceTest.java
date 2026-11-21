@@ -53,6 +53,19 @@ class CatalogServiceTest {
     }
 
     @Test
+    void storesVolumeAndServingWithoutLosingThemOnStockChanges() throws Exception {
+        var soda = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
+                "Soda", "Bebidas sin alcohol - energizantes", true, "5000", null, null, false, 0L, 5L, null, 350), 1);
+        assertThat(service.find(soda.id()).volumeMl()).isEqualTo(350);
+        var cocktail = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
+                "Cóctel", "Cócteles", true, "9000", null, null, false, 0L, 5L, "COPA", null), 1);
+        assertThat(service.find(cocktail.id()).packageKind()).isEqualTo("COPA");
+        service.restock(cocktail.id(), new ProductCommands.Restock(UUID.randomUUID().toString(), cocktail.version(), java.math.BigDecimal.ONE), 1);
+        assertThat(service.find(cocktail.id()).packageKind()).isEqualTo("COPA");
+        assertThat(service.find(cocktail.id()).volumeMl()).isNull();
+    }
+
+    @Test
     void cancellingAnOpenAccountReleasesReservationsOnceAndKeepsAnImmutableAudit() throws Exception {
         var product = service.save(null, new ProductCommands.Save(UUID.randomUUID().toString(), null,
                 "Cerveza", "Cervezas", true, "6000", null, null, false, 2L, 10L), 1);

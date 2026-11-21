@@ -22,7 +22,7 @@ public class ProductRepository {
         return new Product(rs.getString("id"), rs.getString("name"), rs.getString("category"), rs.getBoolean("active"),
                 rs.getInt("version"), nullableLong(rs, "unit_price"),
                 nullableLong(rs, "shot_price"), rs.getString("image_id"),
-                rs.getLong("quantity_sold"), rs.getLong("quantity_remaining"), rs.getString("package_kind"),
+                rs.getLong("quantity_sold"), rs.getLong("quantity_remaining"), rs.getString("serving_kind") != null ? rs.getString("serving_kind") : rs.getString("package_kind"),
                 rs.getObject("volume_ml") == null ? null : rs.getInt("volume_ml"));
     }
 
@@ -41,14 +41,17 @@ public class ProductRepository {
     }
 
     public void save(Product product, boolean create, long now) {
+        boolean serving = "VASO".equals(product.packageKind()) || "COPA".equals(product.packageKind());
+        String packageKind = serving ? null : product.packageKind();
+        String servingKind = serving ? product.packageKind() : null;
         if (create) {
-            jdbc.update("INSERT INTO product (id, name, category, active, image_id, version, created_at, updated_at, quantity_sold, quantity_remaining, package_kind, volume_ml) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            jdbc.update("INSERT INTO product (id, name, category, active, image_id, version, created_at, updated_at, quantity_sold, quantity_remaining, package_kind, volume_ml, serving_kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     product.id(), product.name(), product.category(), product.active(), product.imageId(), product.version(), now, now,
-                    product.quantitySold(), product.quantityRemaining(), product.packageKind(), product.volumeMl());
+                    product.quantitySold(), product.quantityRemaining(), packageKind, product.volumeMl(), servingKind);
         } else {
-            int changed = jdbc.update("UPDATE product SET name = ?, category = ?, active = ?, image_id = ?, version = ?, updated_at = ?, quantity_sold = ?, quantity_remaining = ?, package_kind = ?, volume_ml = ? WHERE id = ? AND version = ?",
+            int changed = jdbc.update("UPDATE product SET name = ?, category = ?, active = ?, image_id = ?, version = ?, updated_at = ?, quantity_sold = ?, quantity_remaining = ?, package_kind = ?, volume_ml = ?, serving_kind = ? WHERE id = ? AND version = ?",
                     product.name(), product.category(), product.active(), product.imageId(), product.version(), now,
-                    product.quantitySold(), product.quantityRemaining(), product.packageKind(), product.volumeMl(), product.id(), product.version() - 1);
+                    product.quantitySold(), product.quantityRemaining(), packageKind, product.volumeMl(), servingKind, product.id(), product.version() - 1);
             if (changed != 1) throw new com.appbarpos.catalog.application.CatalogException(org.springframework.http.HttpStatus.CONFLICT,
                     "VERSION_CONFLICT", "El producto cambió. Actualiza el catálogo antes de editarlo.");
         }
