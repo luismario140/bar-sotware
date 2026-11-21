@@ -2,7 +2,7 @@ import { displayName } from '../catalog/names'
 import { collectSales, visibleHistory, HISTORY_MAX_PAGES } from '../catalog/salesHistory'
 import { salesWorkbook } from '../catalog/salesExport'
 import { accountProduct, paymentLabel } from '../catalog/accounts'
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { CATEGORIES, canonicalCategory, packageLabel, requiresVolume } from '../catalog/categories'
 import { money } from '../catalog/money'
 import { SavedReceipt, saleDate } from '../catalog/SavedReceipt'
@@ -17,6 +17,7 @@ export function SalesPage({ active, onBusyChange }: Props) {
   const [mode, setMode] = useState<'register' | 'history'>('register')
   const [category, setCategory] = useState('')
   const [lines, setLines] = useState<{ id: string; quantity: string }[]>([])
+  const ticketItems = useRef<HTMLDivElement>(null)
   const [operation, setOperation] = useState(() => crypto.randomUUID())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -112,9 +113,12 @@ export function SalesPage({ active, onBusyChange }: Props) {
     if (busy || loading || loadError || blocked(product)) return
     const current = lines.find((line) => line.id === product.id)
     if (current && Number(current.quantity) >= product.quantityRemaining) return
-    change(() => setLines((previous) => current
-      ? previous.map((line) => line.id === product.id ? { ...line, quantity: String((Number(line.quantity) || 0) + 1) } : line)
-      : [...previous, { id: product.id, quantity: '1' }]))
+    change(() => setLines((previous) => {
+      const existing = previous.find((line) => line.id === product.id)
+      const added = existing ? { ...existing, quantity: String((Number(existing.quantity) || 0) + 1) } : { id: product.id, quantity: '1' }
+      return [added, ...previous.filter((line) => line.id !== product.id)]
+    }))
+    ticketItems.current?.scrollTo({ top: 0 })
   }
 
   async function checkout(event: FormEvent) {
@@ -165,12 +169,12 @@ export function SalesPage({ active, onBusyChange }: Props) {
           <form className="sale-ticket draft-ticket" onSubmit={checkout}>
             <header className="ticket-header"><span className="ticket-brand">AppBarPOS</span><h2>Comprobante de venta</h2><p className="ticket-state">{accountState === 'ABIERTA' ? 'Cuenta abierta' : 'Venta en curso'}</p><p className="ticket-reference">{saleDate(Date.now())}</p></header>
             <div className="ticket-columns"><span>Detalle / cantidad</span><span>Importe</span></div>
-            <div className="ticket-items">{cart.length ? cart.map((line) => <div className="ticket-draft-line" data-sale-product={line.id} key={line.id}><div className="ticket-line-title"><strong>{displayName(line.product?.name ?? 'Producto no disponible')}</strong><button className="ticket-remove" type="button" aria-label={`Quitar ${line.product?.name ?? 'producto'}`} disabled={busy} onClick={() => change(() => setLines((previous) => previous.filter((item) => item.id !== line.id)))}>×</button></div>{line.product && <small>{packageLabel(line.product) || line.product.category} · {line.product.unitPriceMinor === null ? 'Sin precio' : money(line.product.unitPriceMinor)} c/u</small>}<div className="ticket-line-controls"><div className="ticket-quantity"><button type="button" disabled={busy} aria-label={`Restar una unidad de ${line.product?.name}`} onClick={() => change(() => setLines((previous) => previous.flatMap((item) => item.id !== line.id ? [item] : Number(item.quantity) > 1 ? [{ ...item, quantity: String(Number(item.quantity) - 1) }] : [])))}>−</button><input id={`sale-quantity-${line.id}`} aria-label={`Cantidad de ${line.product?.name ?? 'producto'}`} type="number" min="1" max={line.product?.quantityRemaining ?? 0} step="1" required disabled={busy} value={line.quantity} onChange={(event) => change(() => setLines((previous) => previous.map((item) => item.id === line.id ? { ...item, quantity: event.target.value } : item)))} /><button type="button" disabled={busy || !line.product || Number(line.quantity) >= line.product.quantityRemaining} aria-label={`Sumar una unidad de ${line.product?.name}`} onClick={() => line.product && add(line.product)}>+</button></div><strong>{line.product ? amountLabel(subtotal(line.product.unitPriceMinor, line.quantity)) : 'No disponible'}</strong></div>{line.product && Number(line.quantity) > line.product.quantityRemaining && <p className="ticket-warning">Quedan {line.product.quantityRemaining} unidades.</p>}</div>) : <p className="ticket-empty">Agrega productos desde las tarjetas para comenzar la venta.</p>}</div>
+            <div className="ticket-items" ref={ticketItems}>{cart.length ? cart.map((line) => <div className="ticket-draft-line" data-sale-product={line.id} key={line.id}><div className="ticket-line-title"><strong>{displayName(line.product?.name ?? 'Producto no disponible')}</strong><button className="ticket-remove" type="button" aria-label={`Quitar ${line.product?.name ?? 'producto'}`} disabled={busy} onClick={() => change(() => setLines((previous) => previous.filter((item) => item.id !== line.id)))}>×</button></div>{line.product && <small>{packageLabel(line.product) || line.product.category} · {line.product.unitPriceMinor === null ? 'Sin precio' : money(line.product.unitPriceMinor)} c/u</small>}<div className="ticket-line-controls"><div className="ticket-quantity"><button type="button" disabled={busy} aria-label={`Restar una unidad de ${line.product?.name}`} onClick={() => change(() => setLines((previous) => previous.flatMap((item) => item.id !== line.id ? [item] : Number(item.quantity) > 1 ? [{ ...item, quantity: String(Number(item.quantity) - 1) }] : [])))}>−</button><input id={`sale-quantity-${line.id}`} aria-label={`Cantidad de ${line.product?.name ?? 'producto'}`} type="number" min="1" max={line.product?.quantityRemaining ?? 0} step="1" required disabled={busy} value={line.quantity} onChange={(event) => change(() => setLines((previous) => previous.map((item) => item.id === line.id ? { ...item, quantity: event.target.value } : item)))} /><button type="button" disabled={busy || !line.product || Number(line.quantity) >= line.product.quantityRemaining} aria-label={`Sumar una unidad de ${line.product?.name}`} onClick={() => line.product && add(line.product)}>+</button></div><strong>{line.product ? amountLabel(subtotal(line.product.unitPriceMinor, line.quantity)) : 'No disponible'}</strong></div>{line.product && Number(line.quantity) > line.product.quantityRemaining && <p className="ticket-warning">Quedan {line.product.quantityRemaining} unidades.</p>}</div>) : <p className="ticket-empty">Agrega productos desde las tarjetas para comenzar la venta.</p>}</div>
             <p className="ticket-total" aria-live="polite">Total <strong id="sale-total">{amountLabel(total)}</strong></p>
             <div className="ticket-checkout-options">
               <fieldset disabled={busy}><legend>Método de pago</legend><div className="ticket-option-buttons"><button id="payment-cash" type="button" aria-pressed={paymentMethod === 'EFECTIVO'} onClick={() => change(() => setPaymentMethod('EFECTIVO'))}>Efectivo</button><button id="payment-transfer" type="button" aria-pressed={paymentMethod === 'TRANSFERENCIA'} onClick={() => change(() => setPaymentMethod('TRANSFERENCIA'))}>Transferencia</button></div></fieldset>
               <fieldset disabled={busy || !paymentMethod}><legend>Estado de la cuenta</legend><div className="ticket-option-buttons"><button id="account-open" type="button" aria-pressed={accountState === 'ABIERTA'} onClick={() => change(() => setAccountState('ABIERTA'))}>Abierta</button><button id="account-closed" type="button" aria-pressed={accountState === 'CERRADA'} onClick={() => change(() => setAccountState('CERRADA'))}>Cerrada</button></div></fieldset>
-              <label htmlFor="sale-account-name">Nombre de cuenta <span>(opcional)</span><input id="sale-account-name" type="text" maxLength={80} value={accountName} disabled={busy} placeholder="Ej. Amigos de Mario" onChange={event => change(() => setAccountName(event.target.value))} /></label>
+              <label htmlFor="sale-account-name">Nombre de cuenta <span>(opcional)</span><input id="sale-account-name" type="text" maxLength={80} value={accountName} disabled={busy} placeholder="Escribe un nombre" onChange={event => change(() => setAccountName(event.target.value))} /></label>
             </div>
             {error && <p className="form-error" role="alert">{error}</p>}
             <button id="complete-sale" className="ticket-complete" type="submit" disabled={busy || loading || Boolean(loadError) || !valid}>{busy ? 'Guardando…' : accountState === 'ABIERTA' ? 'Guardar cuenta abierta' : 'Completar venta'}</button><button id="clear-sale" className="ticket-clear" type="button" disabled={busy || !lines.length} onClick={() => change(resetDraft)}>{selectedAccount ? 'Descartar cambios' : 'Vaciar comprobante'}</button>

@@ -1,21 +1,21 @@
 /* Change the complete palette here. Derived shades follow the base colors. */
 :root {
   color-scheme: dark;
-  --color-bg: #101722;
-  --color-sidebar: #141d2a;
-  --color-surface: #1a2534;
-  --color-surface-raised: #223044;
-  --color-surface-hover: #2a3a50;
-  --color-input: #111c2b;
-  --color-border: #334155;
-  --color-border-strong: #4a5b72;
-  --color-text: #e5eaf0;
-  --color-text-muted: #a6b1c0;
-  --color-text-subtle: #8390a3;
+  --color-bg: #151515;
+  --color-sidebar: #1d1d1c;
+  --color-surface: #242423;
+  --color-surface-raised: #30302e;
+  --color-surface-hover: #3a3a37;
+  --color-input: #1a1a19;
+  --color-border: #454540;
+  --color-border-strong: #68675f;
+  --color-text: #f4f1ec;
+  --color-text-muted: #c5c2ba;
+  --color-text-subtle: #b3b0a8;
   --color-white: #ffffff;
   --color-transparent: transparent;
 
-  --color-accent: #c2561c;
+  --color-accent: #c45a1c;
   --color-accent-hover: color-mix(in srgb, var(--color-accent), var(--color-white) 10%);
   --color-accent-readable: color-mix(in srgb, var(--color-accent), var(--color-white) 35%);
   --color-accent-soft: color-mix(in srgb, var(--color-accent) 14%, var(--color-transparent));
@@ -36,18 +36,18 @@
   --color-disabled: #88909c;
   --color-shadow: #00000026;
   --color-shadow-strong: #00000040;
-  --color-backdrop: #060c16bf;
+  --color-backdrop: #000000bf;
 
-  --receipt-paper: #dcd2ba;
-  --receipt-ink: #2b2620;
-  --receipt-muted: #6b6252;
-  --receipt-border: color-mix(in srgb, var(--receipt-ink) 25%, var(--receipt-paper));
-  --receipt-control: color-mix(in srgb, var(--receipt-ink) 5%, var(--receipt-paper));
-  --receipt-control-hover: color-mix(in srgb, var(--receipt-ink) 10%, var(--receipt-paper));
-  --receipt-input: color-mix(in srgb, var(--color-white) 12%, var(--receipt-paper));
+  --receipt-paper: #f1eee7;
+  --receipt-ink: #1c1a17;
+  --receipt-muted: #403b34;
+  --receipt-border: #8b8274;
+  --receipt-control: #e4ded1;
+  --receipt-control-hover: #d5ccbc;
+  --receipt-input: #ffffff;
   --receipt-marker: color-mix(in srgb, var(--color-accent) 18%, var(--color-transparent));
   --receipt-danger: #943c32;
   --receipt-danger-soft: color-mix(in srgb, var(--receipt-danger) 8%, var(--receipt-paper));
-  --receipt-watermark-opacity: .08;
+  --receipt-watermark-opacity: 0;
   --logo-url: url('/logo.svg');
 }
